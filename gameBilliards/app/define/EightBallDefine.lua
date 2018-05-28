@@ -51,7 +51,7 @@ EightBallDefine.isDebug = false  --调试模式，正式服关闭
 
 local Gravity = -9.8  --重力 （const）
 
-EightBallDefine.freshCount = 20  --刷新频率const，越高增加精度(莫动)，越高越卡，每秒检测次数 （const）
+EightBallDefine.freshCount = 5  --刷新频率const，越高增加精度(莫动)，越高越卡，每秒检测次数 （const）
 
 EightBallDefine.screenRefreshRate = EightBallDefine.freshCount*60.0  --勿动，屏幕帧率，现在是5*60=300 （const）
 
@@ -128,6 +128,7 @@ EightBallDefine.g_Border_Tag = {
     cueCheck = 250,
     lineCheck = 300,
     circleCheck = 350,
+    circleShadow = 351,
     whiteCollisionLine = 400,
     ballCollisionLine = 450,
     heighLight = 1000,

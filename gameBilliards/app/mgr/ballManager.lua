@@ -1,7 +1,7 @@
 ballMgr = ballMgr or {}
 
-local ballState = {}  --实时状态，结束击球会清除保存下一杆的
-local ballProcess = {}  --过程数组
+local ballState = {}  --瀹炴椂鐘舵�侊紝缁撴潫鍑荤悆浼氭竻闄や繚瀛樹笅涓�鏉嗙殑
+local ballProcess = {}  --杩囩▼鏁扮粍
 
 function ballMgr:insertBallState(value)
     table.insert(ballState,value)

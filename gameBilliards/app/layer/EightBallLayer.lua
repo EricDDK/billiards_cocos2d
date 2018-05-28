@@ -1,39 +1,39 @@
 local AGamePhysicalBase = require("AGameCommon.AGamePhysicalBase")
 local EightBallLayer = class("EightBallLayer", AGamePhysicalBase)
 
-local nImg_VS                       = 110  --VS面板
-local nImg_User1                    = 111  --选手1
-local nImg_User2                    = 112  --选手2
---local nImg_Head1                    = 113  --选手1的头
---local nImg_Head2                    = 114  --选手2的头
---local nImg_Ball1                    = 115  --选手1的球clone
---local nImg_Ball2                    = 116  --选手2的球clone
-local nImg_UpBallBg                 = 117  --右上角的拉杆球的底
-local nImg_UpBall                   = 118  --拉杆球
-local nImg_UpBallRedPoint           = 119  --拉杆球红点
-local nText_VS                      = 120  --比分文字信息(1:5)
+local nImg_VS                       = 110       -- VS面板
+local nImg_User1                    = 111       -- 选手1
+local nImg_User2                    = 112       -- 选手2
+local nImg_UpBallBg                 = 117       -- 右上角的拉杆球的底
+local nImg_UpBall                   = 118       -- 拉杆球
+local nImg_UpBallRedPoint           = 119       -- 拉杆球红点
+local nText_VS                      = 120       -- 比分文字信息(1:5)
 
-local nSlider_PowerBar              = 21  --力量条
-local nScroll_PowerCue              = 22  --力量杆裁剪容器
-local nImg_PowerCue                 = 23  --力量杆图片
+local nSlider_PowerBar              = 21        -- 力量条
+local nScroll_PowerCue              = 22        -- 力量杆裁剪容器
+local nImg_PowerCue                 = 23        -- 力量杆图片
 
-local nPanel_FineTurning            = 31  --微调框裁剪
-local nImg_FineTurning1             = 32  --微调框图1
-local nImg_FineTurning2             = 33  --微调框图2
+local nPanel_FineTurning            = 31        -- 微调框裁剪
+local nImg_FineTurning1             = 32        -- 微调框图1
+local nImg_FineTurning2             = 33        -- 微调框图2
 
-local nImg_BallBag                  = 40  --球袋
+local nImg_BallBag                  = 40        -- 球袋
 
-local nPanel_Users                  = 51  --角色容器
-local nImg_PowerBar                 = 52  --力量条容器
-local nLayout_FineTurning           = 53  --微调框容器
-local nImg_Desk                     = 54  -- * 桌子
+local nPanel_Users                  = 51        -- 角色容器
+local nImg_PowerBar                 = 52        -- 力量条容器
+local nLayout_FineTurning           = 53        -- 微调框容器
+local nImg_Desk                     = 54        -- *桌子
 
 --------------------成员变量--------------------
 
-local mCurrentUserID                = -1 --当前操作userid
-local m_rotateX                     = 0  --高低杆x
-local m_rotateY                     = 0  --高低杆y
-local mSyncFrameIndex               = 0  --帧同步当前帧(0.1秒同步一次)
+local m_rotateX                     = 0         -- 高低杆x
+local m_rotateY                     = 0         -- 高低杆y
+local mSyncFrameIndex               = 0         -- 帧同步当前帧(0.1秒同步一次)
+
+--------------------定时器--------------------
+
+local m_syncBallTimeEntery = nil
+local m_ballCheckStopSchedulerEntry = nil  --定时器
 
 function EightBallLayer:ctor()
     self:registerEvents()
@@ -176,16 +176,18 @@ end
 function EightBallLayer:receiveGameStart(event)
     print("EightBallLayer:receiveGameStart")
     dump(event)
+
+    self:restart()
     EBGameControl:startGame(self)
     if event.UserID == player:getPlayerUserID() then
         --我先放置球
         EBGameControl:setGameState(g_EightBallData.gameState.waiting)
-        mCurrentUserID = player:getPlayerUserID()
+        EightBallGameManager:setCurrentUserID(player:getPlayerUserID())
         self.slider_PowerBar:setTouchEnabled(true)
     else
         --对方先放置球
-        EBGameControl:setGameState(g_EightBallData.gameState.none)
-        mCurrentUserID = -1
+        EBGameControl:setGameState(g_EightBallData.gameState.waiting)
+        EightBallGameManager:setCurrentUserID(event.UserID)
         self.slider_PowerBar:setTouchEnabled(false)
     end
 end
@@ -213,7 +215,7 @@ function EightBallLayer:receiveSetCueInfo(event)
 end
 
 function EightBallLayer:receiveSyncBallInfo(event)
-    print("EightBallLayer:receiveSyncBallInfo")
+    --print("EightBallLayer:receiveSyncBallInfo")
     --dump(event.BallInfoArray)
     if event.UserID ~= player:getPlayerUserID() then
         EightBallGameManager:insertSyncBallArray(event,event.FrameIndex)
@@ -223,7 +225,8 @@ end
 function EightBallLayer:receiveHitWhiteBall(event)
     print("EightBallLayer:receiveHitWhiteBall")
     dump(event)
-    mCurrentUserID = ((player:getPlayerUserID() == event.UserID) and {player:getPlayerUserID()} or {event.UserID})[1]
+    local userid = ((player:getPlayerUserID() == event.UserID) and {player:getPlayerUserID()} or {event.UserID})[1]
+    EightBallGameManager:setCurrentUserID(userid)
     --开启定时器的回调函数
     local hitWhiteBallCallback = function(data)
         if self and not tolua.isnull(self) then
@@ -239,15 +242,20 @@ end
 
 function EightBallLayer:receiveHitBallResult(event)
     print("EightBallLayer:receiveHitBallResult")
-    dump(event)
+    --dump(event)
 
+    EightBallGameManager:clearBallsProcess() --清除本地球过程统计数组
+    EightBallGameManager:setBallsResultPos(event)
+    if not m_ballCheckStopSchedulerEntry then
+        EightBallGameManager:syncHitResult(self) --如果定时器已经停止，说明网络延迟，所以同步
+    end
 end
 
 function EightBallLayer:receiveGameOver(event)
     print("EightBallLayer:receiveGameOver")
     dump(event)
 
-    EBGameControl:setGameRound(g_EightBallData.gameRound.none)
+    EBGameControl:setGameState(g_EightBallData.gameState.gameOver)
 
     -- 测试
     -----------------------------------------------------------------------------
@@ -272,15 +280,6 @@ function EightBallLayer:showOriginRolePanel()
     end
 end
 
---获取是不是我击球
-function EightBallLayer:returnIsMyOperate()
-    --如果是练习模式，就是我
-    if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
-        return true
-    end
-    return mCurrentUserID == player:getPlayerUserID()
-end
-
 --初始化物理世界以及信息
 function EightBallLayer:initPhysicalInfo()
     PhyControl:initEightBallPhysicalBorder(self)
@@ -302,15 +301,20 @@ end
 function EightBallLayer:initPowerBar(img_PowerBar)
     local function percentChangedEvent(sender, eventType)
         if eventType == ccui.SliderEventType.slideBallUp then
-            self.cue:launchBall(self.slider_PowerBar:getPercent(),self.desk,m_rotateX,m_rotateY)
-            self.slider_PowerBar:setPercent(0)
-            self.cue:setPercent(0)
-            --练习模式不打开定时器,连续打开两次会卡
-            if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
-                self:openCheckStopTimeEntry()
+            if self.slider_PowerBar:getPercent() > 0 then
+                self.cue:launchBall(self.slider_PowerBar:getPercent(), self.desk, m_rotateX, m_rotateY)
+                self.slider_PowerBar:setPercent(0)
+                self.cue:setPercent(0)
+                -- 练习模式不打开定时器,连续打开两次会卡
+                if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
+                    self:openCheckStopTimeEntry()
+                end
+                m_rotateX = 0 m_rotateY = 0
+                self.upBallRedPoint:setPosition(cc.p(m_rotateX * 30 + 29.5, m_rotateY * 30 + 29.5))
+            else
+                self.slider_PowerBar:setPercent(0)
+                self.cue:setPercent(0)
             end
-            m_rotateX = 0 m_rotateY = 0 
-            self.upBallRedPoint:setPosition(cc.p(m_rotateX*30+29.5,m_rotateY*30+29.5))
         elseif eventType == ccui.SliderEventType.percentChanged then
             self.cue:setPercent(self.slider_PowerBar:getPercent())
         end
@@ -381,29 +385,61 @@ function EightBallLayer:openWhiteBallLayer()
     display.getRunningScene():addChild(require("gameBilliards.app.layer.gamebilliardsWhiteBallLayer").new(self,m_rotateX,m_rotateY))
 end
 
+--游戏重新开始
+function EightBallLayer:restart()
+    EightBallGameManager:initialize()  --初始化一些游戏step成员变量
+    self:closeSyncBallTimeEnter()
+    self:closeCheckStopTimeEntry()
+end
+
 ---------------------------------------------------  ↑  UI  ↑  --------------------------------------------------------------------
 
-local m_sybcBallTimeEntery = nil
+--@ 获取定时器是否在跑,同步
+--@ 用以处理，白球以及蓄力槽点击事件不可以触发 
+function EightBallLayer:getTimeEntryIsRunning()
+    if m_syncBallTimeEntery or m_ballCheckStopSchedulerEntry then
+        return true
+    end
+    return false
+end
+
 --开启帧同步定时器
 function EightBallLayer:openSyncBallTimeEntry()
     local function synchronizeUpdate(dt)
+        print("synchronizeUpdate",dt)
         mSyncFrameIndex = mSyncFrameIndex + 1
+
+        ----------------------------------------------------------------------------------------------------------------------------------
+--        --测试输出
+--        if mSyncFrameIndex == 1 then
+--            _print("!!!!!!!!!!!!!!!!!!!!!!!",self.whiteBall:getPositionX(),self.whiteBall:getPositionY())
+--        end
+        ----------------------------------------------------------------------------------------------------------------------------------
+
         -- 这是我的击球,负责发送就可以
-        if mCurrentUserID == player:getPlayerUserID() then
+        if EightBallGameManager:getCurrentUserID() == player:getPlayerUserID() then
             -- 这是对手的击球，我需要接受并且判断有没有问题再进行补充发送
             EBGameControl:sendSyncBalls(mSyncFrameIndex)
         else
             local syncArray = EightBallGameManager:getSyncBallArray()
-            print("the deal with receive sync frame index = ", mSyncFrameIndex)
+            _print("the deal with receive sync frame index = ", mSyncFrameIndex)
+
+            ----------------------------------------------------------------------------------------------------------------------------------
+--            --测试输出
+--            if mSyncFrameIndex == 1 then
+--                _print("the white ball local pos is ",self.whiteBall:getPositionX(),self.whiteBall:getPositionY())
+--                _print("the white ball sync  pos is ",syncArray[1].BallInfoArray[1].fPositionX,syncArray[1].BallInfoArray[1].fPositionY)
+--                _print("the white ball local velocity is ",self.whiteBall:getVelocity().x,self.whiteBall:getVelocity().y)
+--                _print("the white ball sync  velocity is ",syncArray[1].BallInfoArray[1].fVelocityX,syncArray[1].BallInfoArray[1].fVelocityY)
+--            end
+            ----------------------------------------------------------------------------------------------------------------------------------
+
             if syncArray and #syncArray > mSyncFrameIndex then
                 for i = 0, 15 do
                     local ball = self.desk:getChildByTag(i)
                     if ball then
                         local value = syncArray[mSyncFrameIndex].BallInfoArray
                         ball:syncBallState(value[i + 1])
---                        if i == 0 then
---                            _print("sync whiteBall pos = ",value[i+1].fPositionX,value[i+1].fPositionY)
---                        end
                     end
                 end
             else
@@ -412,20 +448,19 @@ function EightBallLayer:openSyncBallTimeEntry()
         end
     end
     self:closeSyncBallTimeEnter()  --防止开两个定时器导致泄漏
-    m_sybcBallTimeEntery = cc.Director:getInstance():getScheduler():scheduleScriptFunc(synchronizeUpdate, g_EightBallData.netSynchronizationRate, false)
+    m_syncBallTimeEntery = cc.Director:getInstance():getScheduler():scheduleScriptFunc(synchronizeUpdate, g_EightBallData.netSynchronizationRate, false)
 end
 
 --关闭帧同步定时器
 function EightBallLayer:closeSyncBallTimeEnter()
-    if m_sybcBallTimeEntery then
-        cc.Director:getInstance():getScheduler():unscheduleScriptEntry(m_sybcBallTimeEntery)
-        m_sybcBallTimeEntery = nil
+    if m_syncBallTimeEntery then
+        cc.Director:getInstance():getScheduler():unscheduleScriptEntry(m_syncBallTimeEntery)
+        m_syncBallTimeEntery = nil
         EBGameControl:sendSyncBalls(mSyncFrameIndex)
     end
     mSyncFrameIndex = 0
 end
 
-local m_ballMoveSchedulerEntry = nil  --定时器
 --检测球停止定时器
 function EightBallLayer:openCheckStopTimeEntry()
     print("****************openCheckStopTimeEntry****************")
@@ -457,29 +492,55 @@ function EightBallLayer:openCheckStopTimeEntry()
                 self:closeCheckStopTimeEntry()
                 self:closeSyncBallTimeEnter()
             end
+
+            if self.whiteBall:getIsInHole() then
+                self.whiteBall:runAction(cc.Sequence:create(cc.DelayTime:create(1.2),cc.CallFunc:create(function ()
+                    EBGameControl:dealWhiteBallInHole()
+                    if EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
+                        EBGameControl:sendHitBallsResult(mCurrentUserID) --发送击球结果消息
+                        EightBallGameManager:syncHitResult(self) --同步一下击球结果，所有球位置
+                    end
+                end)))
+            else
+                EBGameControl:sendHitBallsResult(mCurrentUserID) --发送击球结果消息
+                EightBallGameManager:syncHitResult(self) --同步一下击球结果，所有球位置
+            end
+
+--            EBGameControl:sendHitBallsResult(mCurrentUserID) --发送击球结果消息
+--            EightBallGameManager:syncHitResult(self) --同步一下击球结果，所有球位置
+--            --练习模式结束后再摆放球
+--            if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
+--                if self.whiteBall:getIsInHole() then
+--                    self.whiteBall:runAction(cc.Sequence:create(cc.DelayTime:create(1),cc.CallFunc:create(function ()
+--                        EBGameControl:dealWhiteBallInHole()
+--                    end)))
+--                end
+--            end
         end
     end
     self:closeCheckStopTimeEntry() --防止开两个定时器导致泄漏
-    m_ballMoveSchedulerEntry = cc.Director:getInstance():getScheduler():scheduleScriptFunc(checkCueVisibleState, 0.1, false)
+    m_ballCheckStopSchedulerEntry = cc.Director:getInstance():getScheduler():scheduleScriptFunc(checkCueVisibleState, 0.1, false)
 end
 
 --关闭检测球停止定时器
 function EightBallLayer:closeCheckStopTimeEntry()
     print("****************closeCheckStopTimeEntry******************")
-    if m_ballMoveSchedulerEntry then
-        cc.Director:getInstance():getScheduler():unscheduleScriptEntry(m_ballMoveSchedulerEntry)
-        m_ballMoveSchedulerEntry = nil
+    if m_ballCheckStopSchedulerEntry then
+        cc.Director:getInstance():getScheduler():unscheduleScriptEntry(m_ballCheckStopSchedulerEntry)
+        m_ballCheckStopSchedulerEntry = nil
     end
-    EBGameControl:sendHitBallsResult(mCurrentUserID) --发送击球结果消息
 end
 
 function EightBallLayer:onEnter()
     print("EightBallLayer:onEnter")
+    --------------------------------------------------------------------------------------------------------------------------
+    -- 测试
     rmgr.registerEvents()
      g_IsSendRequest = true
     -- 开始发送房间心跳包
     ClientNetManager.getInstance():keepRoomAlive()
     ClientNetManager.getInstance():Connect("192.168.0.250", 19838, G_ProtocolType.EIGHTBALL)
+    --------------------------------------------------------------------------------------------------------------------------
 
     DisplayObserver.getInstance():addDisplayByName("EightBallLayer",self)
     --加载3D物理
@@ -491,6 +552,7 @@ function EightBallLayer:onEnter()
     if g_EightBallData.isDebug then cc.Director:getInstance():getRunningScene():getPhysicsWorld():setDebugDrawMask(cc.PhysicsWorld.DEBUGDRAW_ALL) end
     cc.Director:getInstance():getRunningScene():getPhysicsWorld():setGravity(cc.p(0, 0))
     local function physicsFixedUpdate(delta)
+        if not m_ballCheckStopSchedulerEntry then return end --没有定时器就不跑物理世界，性能更优化
         for i = 1, g_EightBallData.freshCount do
             cc.Director:getInstance():getRunningScene():getPhysicsWorld():step(1 / g_EightBallData.screenRefreshRate)
         end

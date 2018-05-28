@@ -4,7 +4,7 @@ local gamename = "gameBilliards"
 
 g_EightBallData = require("gameBilliards.app.define.EightBallDefine")
 
--- require("gameBilliards.app.define.GlobalDefine")  --²âÊÔLayerÓÃ
+-- require("gameBilliards.app.define.GlobalDefine")  --æµ‹è¯•Layerç”¨
 require("gameBilliards.app.mgr.EightBallGameManager")
 require("gameBilliards.app.mgr.ballManager")
 require("gameBilliards.app.mgr.MathMgr")

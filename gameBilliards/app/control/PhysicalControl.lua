@@ -242,6 +242,22 @@ function PhyControl:drawRouteDetection(rotate, cue, whiteBall, mainLayer)
         _line:setContentSize(cc.size(_tmpCollisionBall[1].distance - _value - _radius, _line:getContentSize().height))
         _circle:setPosition(cc.p((_tmpCollisionBall[1].distance - _value), _line:getContentSize().height/2))
         _circle:setVisible(true)
+
+        if EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
+            local myColor = EightBallGameManager:getMyColor()
+            -- -1是默认值，白圈判定
+            if myColor == -1 then
+                cue:setCircleByLegal(true)
+                return
+            end
+            if _tmpCollisionBall[1].tag < 8 and myColor == 1 then
+                cue:setCircleByLegal(true)
+            elseif _tmpCollisionBall[1].tag > 8 and myColor == 2 then
+                cue:setCircleByLegal(true)
+            else
+                cue:setCircleByLegal(false)
+            end
+        end
     else
         local _value = mathMgr:getLineLengthBetweenPointAndLine(rotate, _whitePos, _radius)
         _circle:setPosition(cc.p(_value, _line:getContentSize().height/2))

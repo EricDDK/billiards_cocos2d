@@ -4,7 +4,7 @@ function mathMgr:init()
     
 end
 
---Í¨ÓÃ·½·¨£¬±£ÁôĞ¡ÊıÎ»ºóÊı×Ö
+--é€šç”¨æ–¹æ³•ï¼Œä¿ç•™å°æ•°ä½åæ•°å­—
 function GetPreciseDecimal(num)
     return num - num % 0.00001
 end
@@ -13,11 +13,11 @@ function mathMgr:getAngular(args)
     
 end
 
---¸ù¾İ´¥ÃşµãÅĞ¶ÏºÍÇòĞÎ³ÉµÄ½Ç¶È
---@touchPos ´¥Ãşµã
---@ballX °×ÇòX
---@ballY °×ÇòY
---@return ·µ»ØµãºÍÇòĞÎ³ÉµÄ½Ç¶È
+--æ ¹æ®è§¦æ‘¸ç‚¹åˆ¤æ–­å’Œçƒå½¢æˆçš„è§’åº¦
+--@touchPos è§¦æ‘¸ç‚¹
+--@ballX ç™½çƒX
+--@ballY ç™½çƒY
+--@return è¿”å›ç‚¹å’Œçƒå½¢æˆçš„è§’åº¦
 function mathMgr:getAngularByTouchPosAndBallPos(touchPos,ballX,ballY)
     local rotateX = ballX-touchPos.x
     local rotateY = ballY-touchPos.y
@@ -34,9 +34,9 @@ function mathMgr:getAngularByTouchPosAndBallPos(touchPos,ballX,ballY)
     return rotate
 end
 
---À­¶¯¸Ë×ÓÊ±ºò»ñÈ¡Çò¸ËµÄÎ»ÒÆ·½ÏòºÍÎ»ÖÃ
---@cueRotate ¸Ë×ÓµÄ×ª¶¯½Ç
---@percent Á¦Á¿Ìõ°Ù·Ö±È
+--æ‹‰åŠ¨æ†å­æ—¶å€™è·å–çƒæ†çš„ä½ç§»æ–¹å‘å’Œä½ç½®
+--@cueRotate æ†å­çš„è½¬åŠ¨è§’
+--@percent åŠ›é‡æ¡ç™¾åˆ†æ¯”
 function mathMgr:getCuePosByRotate(cueRotate,percent)
     cueRotate = mathMgr:changeAngleTo0to360(cueRotate)
 --    if cueRotate < 0 then
@@ -65,7 +65,7 @@ function mathMgr:getCuePosByRotate(cueRotate,percent)
     return posX,posY
 end
 
---ÅĞ¶ÏÔ°ÊÇ·ñºÍ¾ØĞÎÅö×²
+--åˆ¤æ–­å›­æ˜¯å¦å’ŒçŸ©å½¢ç¢°æ’
 function mathMgr.circleIntersectRect(_circle_pt, _rect,_width,_height,_radius)
     local cx = nil
     local cy = nil
@@ -111,7 +111,7 @@ function mathMgr.rot(x1,y1,x2,y2)
     return math.atan(value)*180/math.pi
 end
 
---¼ÆËãÁ½µãÖ®¼äµÄÆ½·½
+--è®¡ç®—ä¸¤ç‚¹ä¹‹é—´çš„å¹³æ–¹
 function mathMgr.getDistancePow2(x1, y1, x2, y2)
     return math.pow((x1 - x2), 2) + math.pow((y1 - y2), 2)
 end
@@ -127,7 +127,7 @@ end
 function mathMgr.getNewRx_Ry(x1,y1,x2,y2,rotation)
     local json = {}
     local distance = mathMgr.twoDistance(x1,y1,x2,y2)
-    --¼ÆËã×îĞÂ½Ç¶È£¨ÓëXÖáµÄ½Ç¶È£©£¬Í¬ÊıÑ§X YÖá
+    --è®¡ç®—æœ€æ–°è§’åº¦ï¼ˆä¸Xè½´çš„è§’åº¦ï¼‰ï¼ŒåŒæ•°å­¦X Yè½´
     local newrot = mathMgr.rot(x1,y1,x2,y2) - rotation
     local newRx = math.cos(newrot/180*math.pi) * distance
     local newRy = math.sin(newrot/180*math.pi) * distance
@@ -136,14 +136,14 @@ function mathMgr.getNewRx_Ry(x1,y1,x2,y2,rotation)
     return json
 end
 
---µãµ½Ö±Ïß×î¶Ì¾àÀë
+--ç‚¹åˆ°ç›´çº¿æœ€çŸ­è·ç¦»
 function mathMgr.getShortestDistanceBetweenPointAndLine(rotate,ballPos,whitePos,radius)
     local A,B,C = mathMgr.getLineEquation(rotate / 180 * math.pi, whitePos)
     local _verticalLine = math.abs(A*ballPos.x+B*ballPos.y+C)/math.sqrt(A*A+B*B)
     return math.sqrt(4*radius*radius-_verticalLine*_verticalLine)
 end
 
---»ñÈ¡ÉäÏßµÄ·½³ÌÊ½ return y=kx+b
+--è·å–å°„çº¿çš„æ–¹ç¨‹å¼ return y=kx+b
 function mathMgr.getLineEquation(rotate, whitePos)
     local A = -math.tan(rotate)
     local B = 1
@@ -151,10 +151,10 @@ function mathMgr.getLineEquation(rotate, whitePos)
     return A,B,C
 end
 
---¸ù¾İÁÁµã»ñÈ¡ÔÚÒ»¸öÔ²ÉÏµÄ½»µã
---@whiteCollisionPoint °×ÇòµÄnode×ø±ê
---@ballCollisionPoint ²ÊÇòµÄnode×ø±ê
---@radius ÇòµÄ°ë¾¶
+--æ ¹æ®äº®ç‚¹è·å–åœ¨ä¸€ä¸ªåœ†ä¸Šçš„äº¤ç‚¹
+--@whiteCollisionPoint ç™½çƒçš„nodeåæ ‡
+--@ballCollisionPoint å½©çƒçš„nodeåæ ‡
+--@radius çƒçš„åŠå¾„
 function mathMgr.getPointOnCircle(_self,_whiteCollisionPoint,_ballCollisionPoint,radius)
     print("====",_ballCollisionPoint.x,_whiteCollisionPoint.x,_ballCollisionPoint.y,_whiteCollisionPoint.y)
     if _ballCollisionPoint.x >= _whiteCollisionPoint.x and _ballCollisionPoint.y >= _whiteCollisionPoint.y then
@@ -169,11 +169,11 @@ function mathMgr.getPointOnCircle(_self,_whiteCollisionPoint,_ballCollisionPoint
     end
 end
 
---ÅĞ¶ÏÖ±ÏßºÍ±ß¿òµÄÅö×²µã
---@rotate Ğı×ª½Ç¶È£¬ÊıÑ§½Ç¶È
---@whitePos °×ÇòµÄnodeÏà¶ÔÎ»ÖÃ
---@radius ÇòÌå°ë¾¶
---@return Î»ÖÃ bool:ÊÇ·ñÊÇÓë³¤ÏàÅö×²
+--åˆ¤æ–­ç›´çº¿å’Œè¾¹æ¡†çš„ç¢°æ’ç‚¹
+--@rotate æ—‹è½¬è§’åº¦ï¼Œæ•°å­¦è§’åº¦
+--@whitePos ç™½çƒçš„nodeç›¸å¯¹ä½ç½®
+--@radius çƒä½“åŠå¾„
+--@return ä½ç½® bool:æ˜¯å¦æ˜¯ä¸é•¿ç›¸ç¢°æ’
 function mathMgr:getLineLengthBetweenPointAndLine(rotate, whitePos, radius)
     while rotate < 0 do
         rotate = 360 + rotate
@@ -220,8 +220,8 @@ function mathMgr:getLineLengthBetweenPointAndLine(rotate, whitePos, radius)
     return 0
 end
 
---°Ñ½Ç¶È×ª»»Îª0-360¶ÈÖ®¼äÊ¹ÓÃ(ÖØÒª)
---@ angle ³õÊ¼½Ç¶È
+--æŠŠè§’åº¦è½¬æ¢ä¸º0-360åº¦ä¹‹é—´ä½¿ç”¨(é‡è¦)
+--@ angle åˆå§‹è§’åº¦
 function mathMgr:changeAngleTo0to360(angle)
     if angle < 0 then
         angle = angle + 360 * - math.modf(angle / 360) + 360
@@ -231,10 +231,10 @@ function mathMgr:changeAngleTo0to360(angle)
     return angle
 end
 
---ÅĞ¶Ï°×ÇòÎ»ÖÃÊÇ·ñºÏ·¨
---@ rootNode ÓÎÏ·Í¼²ãself
---@ pos °×ÇòÎ»ÖÃ£¬deskµÄÏà¶ÔÎ»ÖÃ
---@ ball °×Çò¾«Áé
+--åˆ¤æ–­ç™½çƒä½ç½®æ˜¯å¦åˆæ³•
+--@ rootNode æ¸¸æˆå›¾å±‚self
+--@ pos ç™½çƒä½ç½®ï¼Œdeskçš„ç›¸å¯¹ä½ç½®
+--@ ball ç™½çƒç²¾çµ
 function mathMgr:checkBallLocationIsLegal(rootNode, pos, whiteBall)
     local desk = rootNode.desk
     local radius = whiteBall:getContentSize().width / 2

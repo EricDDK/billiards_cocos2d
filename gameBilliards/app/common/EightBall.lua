@@ -1,7 +1,7 @@
 local BallBase = require("gameBilliards.app.common.BallBase")
 local EightBall = class("EightBall", BallBase)
 
---调整高光
+-- 调整高光
 function EightBall:adjustHighLight()
     local _highLight = self:getChildByTag(g_EightBallData.g_Border_Tag.heighLight)
     if _highLight then
@@ -10,7 +10,7 @@ function EightBall:adjustHighLight()
     end
 end
 
---调整速度，刷新,3D动画的刷新以及速度的刷新
+-- 调整速度，刷新,3D动画的刷新以及速度的刷新
 function EightBall:adjustBallSpeed()
     local velocity = self:getPhysicsBody():getVelocity()
     local v = math.pow(velocity.x, 2) + math.pow(velocity.y, 2)
@@ -28,7 +28,7 @@ function EightBall:adjustBallSpeed()
     end
 end
 
---检测球是否速度足够小可以停止转动
+-- 检测球是否速度足够小可以停止转动
 function EightBall:checkIsStop()
     local _velocity = self:getPhysicsBody():getVelocity()
     if math.abs(_velocity.x) >= g_EightBallData.ballVelocityLimit
@@ -41,7 +41,7 @@ function EightBall:checkIsStop()
     return nil
 end
 
---球停止运动
+-- 球停止运动
 function EightBall:resetForceAndEffect()
     self:getPhysicsBody():setVelocity(cc.p(0, 0))
     self:getPhysicsBody():setAngularVelocity(0)
@@ -60,12 +60,12 @@ function EightBall:resetForceAndEffect()
     end
 end
 
---球进洞
+-- 球进洞
 function EightBall:ballGoInHole(nTag)
     self:setBallState(g_EightBallData.ballState.inHole)
 end
 
---重置球
+-- 重置球
 function EightBall:resetBallState()
     self:setScale(g_EightBallData.radius/(self:getContentSize().width/2))
     self:setBallState(g_EightBallData.ballState.stop)
@@ -80,13 +80,17 @@ function EightBall:resetBallState()
     end
 end
 
---构造函数
+-- 构造函数
 function EightBall:ctor(nTag)
     self:setTexture("gameBilliards/eightBall/eightBall_TransparentBall.png")
     self:setScale(g_EightBallData.radius/(self:getContentSize().width/2))
     self:setTag(nTag)
     --self:setGlobalZOrder(1002+nTag)
-    self:setPhysicsBody(cc.PhysicsBody:createCircle(self:getContentSize().width / 2, g_EightBallData.whilteBallPhysicsMaterial))
+    if nTag == g_EightBallData.g_Border_Tag.whiteBall then
+        self:setPhysicsBody(cc.PhysicsBody:createCircle(self:getContentSize().width / 2, g_EightBallData.whilteBallPhysicsMaterial))
+    else
+        self:setPhysicsBody(cc.PhysicsBody:createCircle(self:getContentSize().width / 2, g_EightBallData.ballPhysicsMaterial))
+    end
     self:getPhysicsBody():setLinearDamping(g_EightBallData.ballLinearDamping)
     self:getPhysicsBody():setAngularDamping(g_EightBallData.ballAngularDamping)
     self:getPhysicsBody():setCategoryBitmask(0x01)
@@ -101,7 +105,7 @@ function EightBall:ctor(nTag)
     end
 end
 
---加载其他组件(白球)
+-- 加载其他组件(白球)
 function EightBall:loadOtherCompernent()
     local radius = self:getContentSize().width/2
     local whiteShadow = cc.Sprite:create("gameBilliards/eightBall/eightBall_WhiteBall_BigCircle.png")
@@ -127,7 +131,7 @@ function EightBall:loadOtherCompernent()
     self:addChild(forbidden)
 end
 
---加载光影特效
+-- 加载光影特效
 function EightBall:loadEffect()
     local highLight = ccui.ImageView:create("gameBilliards/eightBall/eightBall_Ball_HighLight.png", UI_TEX_TYPE_LOCAL)
     highLight:setCascadeOpacityEnabled(false)
@@ -146,14 +150,14 @@ function EightBall:loadEffect()
     self:addChild(shadow)
 end
 
---3D渲染球体
+-- 3D渲染球体
 function EightBall:set3DRender(nTag)
     local effect = require("gameBilliards/app/common/Ball3DRender").new(nTag,self)
     effect:setPosition(cc.p(self:getContentSize().width / 2, self:getContentSize().height / 2))
     self:addChild(effect)
 end
 
---重置3D渲染位置
+-- 重置3D渲染位置
 function EightBall:reset3DRender()
     
 end
@@ -240,7 +244,7 @@ end
 -- ----------------------------------------------------------------------------
 
 local mCanSendSetWhiteBallMessage = true
---发送移动杆子消息(定时器，多少秒内发)
+--  发送移动杆子消息(定时器，多少秒内发)
 --@ angle 杆子旋转的角度
 --@ rootNode 游戏场景layer
 --@ isEnded 如果是触摸停止事件必然发送
@@ -263,7 +267,7 @@ function EightBall:sendSetWhiteBallMessage(posX,posY, rootNode,isEnded)
     end
 end
 
---同步球信息(帧同步)
+--  同步球信息(帧同步)
 --@ event 球信息
 --@ isResume 是否是断线重连
 function EightBall:syncBallState(event,isResume)
@@ -275,14 +279,14 @@ function EightBall:syncBallState(event,isResume)
     end
 end
 
---获取球帧同步信息
+-- 获取球帧同步信息
 function EightBall:getBallSyncState()
     local _positionX, _positionY = self:getPosition()
     local _velocity = self:getPhysicsBody():getVelocity()
     local _angularVelocity = self:getPhysicsBody():getAngularVelocity()
     local _unevenBarsForce = self:getWhiteBallContinuesForce()
     local _prickStrokeForce = cc.p(0.0, 0.0)
-    --保留小数点后5位
+    -- 保留小数点后5位
     return {
         fPositionX = string.format("%.5f", _positionX),
         fPositionY = string.format("%.5f", _positionY),
@@ -296,7 +300,20 @@ function EightBall:getBallSyncState()
     }
 end
 
---获取球帧同步信息
+-- 收到服务器同步的结果消息，同步球的所有位置
+function EightBall:setBallsResultState(event)
+    local posX = GetPreciseDecimal(event.fPositionX)
+    local posY = GetPreciseDecimal(event.fPositionY)
+    if self:getTag() == 0 then
+        local rotate = GetPreciseDecimal(event.fAngularVelocity)
+        self:setRotation(rotate)
+    end
+    self:setPosition(cc.p(posX,posY))
+end
+
+--  获取球停止后的信息，在获取击球结果时使用
+--@ fAngularVelocity 不是角速度
+--@ 只有白球的fAngularVelocity，是当前白球的rotation角度，其他球还是0的角速度
 function EightBall:getBallsResultState()
     local _positionX, _positionY = self:getPosition()
     local angularVelocity = 0
@@ -317,7 +334,7 @@ function EightBall:getBallsResultState()
     }
 end
 
---施加在白球上的持续的力
+-- 施加在白球上的持续的力
 local whiteBallContinuesForce = cc.p(0,0)
 function EightBall:setWhiteBallContinuesForce(event)
     if self:getTag() ~= 0 then
@@ -334,7 +351,7 @@ function EightBall:clearWhiteBallContinuesForce()
     whiteBallContinuesForce = cc.p(0,0)
 end
 
---保存球状态
+-- 保存球状态
 local ballState = g_EightBallData.ballState.stop
 function EightBall:setBallState(args)
     ballState = args
@@ -342,6 +359,13 @@ end
 
 function EightBall:getBallState()
     return ballState
+end
+
+-- 获取此球是否进洞
+function EightBall:getIsInHole()
+    return ballState == g_EightBallData.ballState.inHole
+    or self:getPositionX() < 0 or self:getPositionX() > 968 
+    or self:getPositionY() < 0 or self:getPositionY() > 547
 end
 
 return EightBall

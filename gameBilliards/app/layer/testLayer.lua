@@ -63,7 +63,7 @@ function testLayer:setPhysicalView()
     rigidBody:setAngularVelocity(cc.vec3(0,0,0))
     --rigidBody:setLinearVelocity(cc.vec3(0,3,0))
 
-    self:setActionView()   --²âÊÔÐ§¹û
+    self:setActionView()   --æµ‹è¯•æ•ˆæžœ
 
     self._physicsScene:setPhysics3DDebugCamera(self._camera)
 end

@@ -38,7 +38,7 @@ function EBGameControl:ballInHole(nTag, nNode)
     EightBallGameManager:dealInHole(nTag)
     local ball = m_MainLayer.desk:getChildByTag(nTag)
     if ball and nNode then
-        ball:ballGoInHole(nTag)--球进洞
+        ball:ballGoInHole(nTag)--球进洞(设置一下ballState)
         local ballPosX, ballPosY = ball:getPosition()
         local nodePosX, nodePosY = nNode:getPosition()
         ball:runAction(cc.Sequence:create(cc.DelayTime:create(0), cc.CallFunc:create( function()
@@ -60,7 +60,7 @@ function EBGameControl:ballInHole(nTag, nNode)
                     ball:resetBallState()
                     ball:setPosition(cc.p(1500,1500))
                     if ball:getTag() == 0 then
-                        EBGameControl:dealWhiteBallInHole()--处理白球落袋
+                        --EBGameControl:dealWhiteBallInHole()--处理白球落袋
                     elseif ball:getTag() == 8 then
                         tool.openNetTips("黑八进啦，比赛结束了傻逼")
                     end
@@ -267,7 +267,8 @@ end
 local curFineTurningPosY = 0  -- 当前微调框走到哪里了，是否需要重置位置
 local isTouchWhiteBall = false --是否触摸开始时触摸到了白球
 function EBGameControl:onTouchBegan(touch, event)
-    if not m_MainLayer:returnIsMyOperate() or EBGameControl:getGameState() == g_EightBallData.gameState.none or EBGameControl:getGameState() == g_EightBallData.gameState.gameOver then
+    if m_MainLayer:getTimeEntryIsRunning() or not EightBallGameManager:returnIsMyOperate() or EBGameControl:getGameState() == g_EightBallData.gameState.none 
+    or EBGameControl:getGameState() == g_EightBallData.gameState.gameOver then
         return true
     end
     isTouchWhiteBall = false
@@ -297,7 +298,8 @@ function EBGameControl:onTouchBegan(touch, event)
 end
 
 function EBGameControl:onTouchEnded(touch, event)
-    if not m_MainLayer:returnIsMyOperate() or EBGameControl:getGameState() == g_EightBallData.gameState.none or EBGameControl:getGameState() == g_EightBallData.gameState.gameOver then
+    if m_MainLayer:getTimeEntryIsRunning() or not EightBallGameManager:returnIsMyOperate() or EBGameControl:getGameState() == g_EightBallData.gameState.none 
+    or EBGameControl:getGameState() == g_EightBallData.gameState.gameOver then
         return true
     end
     local fineTurningRect = m_MainLayer.layout_FineTurning:getBoundingBox()
@@ -327,7 +329,8 @@ function EBGameControl:onTouchEnded(touch, event)
 end
 
 function EBGameControl:onTouchMoved(touch, event)
-    if not m_MainLayer:returnIsMyOperate() or EBGameControl:getGameState() == g_EightBallData.gameState.none or EBGameControl:getGameState() == g_EightBallData.gameState.gameOver then
+    if m_MainLayer:getTimeEntryIsRunning() or not EightBallGameManager:returnIsMyOperate() or EBGameControl:getGameState() == g_EightBallData.gameState.none 
+    or EBGameControl:getGameState() == g_EightBallData.gameState.gameOver then
         return true
     end
     local fineTurningRect = m_MainLayer.layout_FineTurning:getBoundingBox()
@@ -380,16 +383,21 @@ end
 
 --发送同步球信息
 function EBGameControl:sendSyncBalls(syncFrameIndex)
-    print("sendSyncBalls frame index = ", syncFrameIndex)
+    if EBGameControl:getGameState() == g_EightBallData.gameState.practise then return end
+    _print("sendSyncBalls frame index = ", syncFrameIndex)
     local ballArray = { }
+    ----------------------------------------------------------------------------------------------------------------------------------
+    -- 测试输出
+    if syncFrameIndex == 1 then
+        _print("the white ball local pos is ", m_MainLayer.whiteBall:getPositionX(), m_MainLayer.whiteBall:getPositionY())
+        _print("the white ball local velocity is ", m_MainLayer.whiteBall:getVelocity().x, m_MainLayer.whiteBall:getVelocity().y)
+    end
+    ----------------------------------------------------------------------------------------------------------------------------------
     for i = 1, 16 do
         local ball = m_MainLayer.desk:getChildByTag(i - 1)
         if ball then
             ballArray[i] = ball:getBallSyncState()
-            ball:syncBallState(ballArray[i])  --发送的同时把数据同步到物理引擎中
-            if i == 1 then
-                _print("sync whiteBall pos = ", ballArray[i].fPositionX, ballArray[i].fPositionY)
-            end
+            ball:syncBallState(ballArray[i]) -- 发送的同时把数据同步到物理引擎中
         end
     end
     local requestData = {
@@ -406,7 +414,10 @@ end
 
 --发送击球结果消息
 function EBGameControl:sendHitBallsResult(currentUserID)
-    if currentUserID == player:getPlayerUserID() then
+    print("sendHitBallsResult userid = ",currentUserID)
+    if EBGameControl:getGameState() == g_EightBallData.gameState.practise then return end
+    --如果击球人是我或者击打完了还没有收到结果
+    if currentUserID == player:getPlayerUserID() or next(EightBallGameManager:getBallsResultPos()) == nil then
         local ballArray = { }
         for i = 1, 16 do
             local ball = m_MainLayer.desk:getChildByTag(i - 1)

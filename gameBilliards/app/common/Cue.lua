@@ -49,11 +49,12 @@ function Cue:ctor(_root)
     spriteLine:addChild(circleCheck)
 
     local CircleShadow = cc.Sprite:create("gameBilliards/eightBall/eightBall_DrawCircle_Shadow.png")
+    CircleShadow:setTag(g_EightBallData.g_Border_Tag.circleShadow)
     CircleShadow:setPosition(cc.p(pos,pos))
     circleCheck:addChild(CircleShadow)
 
     -------------------------------------------------------------
-    self:setGlobalZOrder(1000)  --测试用
+    self:setGlobalZOrder(1000)
     self:setCameraMask(cc.CameraFlag.USER2)
     --spriteLine:setGlobalZOrder(1000)  --测试用
     --spriteLine:setCameraMask(cc.CameraFlag.USER2)
@@ -68,8 +69,19 @@ function Cue:ctor(_root)
     mCanSendSetCueMessage = true  --重置成员函数
 end
 
+function Cue:setCircleByLegal(isLegal)
+    if not isLegal then
+        m_RootBall:getChildByTag(g_EightBallData.g_Border_Tag.lineCheck):getChildByTag(g_EightBallData.g_Border_Tag.circleCheck)
+        :getChildByTag(g_EightBallData.g_Border_Tag.circleShadow):setTexture("gameBilliards/eightBall/eightBall_DrawCircle_Red.png")
+        return
+    end
+    m_RootBall:getChildByTag(g_EightBallData.g_Border_Tag.lineCheck):getChildByTag(g_EightBallData.g_Border_Tag.circleCheck)
+    :getChildByTag(g_EightBallData.g_Border_Tag.circleShadow):setTexture("gameBilliards/eightBall/eightBall_DrawCircle_Shadow.png")
+end
+
 --重置杆前后位置
 function Cue:resetPos()
+    self:setCircleByLegal(true)
     local pos = m_RootBall:getContentSize().width/2
     self:setPosition(cc.p(pos,pos))
 end
@@ -99,36 +111,37 @@ function Cue:launchBall(_forcePercent, rootNode, rotateX, rotateY, otherX, other
     local x, y = spriteTag:getPosition()
     local cuePos = self:convertToWorldSpace(cc.p(spriteTag:getPosition()))
     local ballPos = rootNode:convertToWorldSpace(cc.p(m_RootBall:getPosition()))
-    print("launchBall cuePos = ", cuePos.x, cuePos.y)
-    print("launchBall ballPos = ", ballPos.x, ballPos.y)
-
+    local diffX,diffY = (ballPos.x - cuePos.x),(ballPos.y - cuePos.y)
+--    print("launchBall cuePos = ", cuePos.x, cuePos.y)
+--    print("launchBall ballPos = ", ballPos.x, ballPos.y)
+    
     --练习模式
     if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
         m_RootBall:getPhysicsBody():setVelocity(
         cc.p(
-        (ballPos.x - cuePos.x) * g_EightBallData.lineSpeedRatio * _forcePercent,
-        (ballPos.y - cuePos.y) * g_EightBallData.lineSpeedRatio * _forcePercent)
+        diffX * g_EightBallData.lineSpeedRatio * _forcePercent,
+        diffY * g_EightBallData.lineSpeedRatio * _forcePercent)
         )
 
         m_RootBall:getPhysicsBody():setAngularVelocity(g_EightBallData.leftRightForceRatio * rotateX)
 
         m_RootBall:getPhysicsBody():applyForce(
         cc.p(
-        ((ballPos.x - cuePos.x) * g_EightBallData.rotateForceRatio * _forcePercent * rotateY),
-        ((ballPos.y - cuePos.y) * g_EightBallData.rotateForceRatio * _forcePercent * rotateY)
+        (diffX * g_EightBallData.rotateForceRatio * _forcePercent * rotateY),
+        (diffY * g_EightBallData.rotateForceRatio * _forcePercent * rotateY)
         ), 
         cc.p(0, 0)
         )
     --比赛中
     else
-        local percent = _forcePercent
+        local percent = _forcePercent*100
         local ballPosX = m_RootBall:getPositionX()
         local ballPosY = m_RootBall:getPositionY()
-        local velocityX =(ballPos.x - cuePos.x) * g_EightBallData.lineSpeedRatio * _forcePercent
-        local velocityY =(ballPos.y - cuePos.y) * g_EightBallData.lineSpeedRatio * _forcePercent
+        local velocityX =diffX * g_EightBallData.lineSpeedRatio * _forcePercent
+        local velocityY =diffY * g_EightBallData.lineSpeedRatio * _forcePercent
         local angularVelocity = g_EightBallData.leftRightForceRatio * rotateX
-        local unevenX =(ballPos.x - cuePos.x) * g_EightBallData.rotateForceRatio * _forcePercent * rotateY
-        local unevenY =(ballPos.y - cuePos.y) * g_EightBallData.rotateForceRatio * _forcePercent * rotateY
+        local unevenX =diffX * g_EightBallData.rotateForceRatio * _forcePercent * rotateY
+        local unevenY =diffY * g_EightBallData.rotateForceRatio * _forcePercent * rotateY
         local prickStrokeX = 0.0
         local prickStrokeY = 0.0
         Cue:sendHitWhiteBallMessage(percent, ballPosX, ballPosY, velocityX, velocityY, angularVelocity, unevenX, unevenY, prickStrokeX, prickStrokeY)
@@ -158,12 +171,13 @@ function Cue:receiveLauchBall(event, callback)
         _hitWhiteBall()
    -- 是对手击的球就播放动画，延迟击打，同步
     else
+        self:stopAllActions()
         local cueRotate = mathMgr:changeAngleTo0to360(self:getRotation())
         self:setRotation(cueRotate)
-        local posX, posY = mathMgr:getCuePosByRotate(cueRotate, event.Percent * 100)
+        local posX, posY = mathMgr:getCuePosByRotate(cueRotate, event.Percent)
         local radius = m_RootBall:getContentSize().width / 2
 
-        local func1 = cc.MoveTo:create(event.Percent, cc.p(radius + posX, radius + posY))
+        local func1 = cc.MoveTo:create(1, cc.p(radius + posX, radius + posY))
         local func2 = cc.CallFunc:create( function()
             _hitWhiteBall()
         end )
@@ -190,6 +204,7 @@ function Cue:setCueLineCircleVisible(isVisible)
         lineCheck:setVisible(isVisible)
     end
     self:setVisible(isVisible)
+    self:setCircleByLegal(true)
 end
 
 local mCanSendSetCueMessage = true
