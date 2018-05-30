@@ -11,7 +11,9 @@ function EightBallGameManager:returnIsMyOperate()
 end
 
 function EightBallGameManager:setCurrentUserID(args)
-    mCurrentUserID = args 
+    if args then
+        mCurrentUserID = args
+    end
 end
 
 function EightBallGameManager:getCurrentUserID()
@@ -121,35 +123,53 @@ end
 --击球结果同步数组
 local switch = {
     [g_EightBallData.gameRound.none] = function()
-        print("result is none")
+        print("\n       result is none \n")
         EBGameControl:setGameState(g_EightBallData.gameState.none)
     end,
     [g_EightBallData.gameRound.foul] = function()
-        print("result is foul")
-        EBGameControl:setGameState(g_EightBallData.gameState.setWhite)
+        print("\n           result is foul \n")
+        --第一轮次就打进白球，重新摆白球进行击打
+        if ballsResultArray.RountCount == 0 then
+            EBGameControl:setGameState(g_EightBallData.gameState.waiting)
+        else
+            EBGameControl:setGameState(g_EightBallData.gameState.setWhite)
+        end
     end,
     [g_EightBallData.gameRound.keep] = function()
-        print("result is keep")
+        print("\n           result is keep \n")
         EBGameControl:setGameState(g_EightBallData.gameState.hitBall)
     end,
     [g_EightBallData.gameRound.change] = function()
-        print("result is change")
+        print("\n           result is change \n")
         EBGameControl:setGameState(g_EightBallData.gameState.hitBall)
     end,
     [g_EightBallData.gameRound.gameOver] = function()
-        print("result is gameOver")
+        print("\n           result is gameOver \n")
         EBGameControl:setGameState(g_EightBallData.gameState.gameOver)
     end,
     [g_EightBallData.gameRound.restart] = function()
-        print("result is restart")
+        print("\n           result is restart \n")
         EBGameControl:setGameState(g_EightBallData.gameState.waiting)
     end,
 }
---同步一下结果，所有球位置修正
+-- 同步一下结果，所有球位置修正
+--@ rootNode 游戏主layer
 function EightBallGameManager:syncHitResult(rootNode)
-    if EBGameControl:getGameState() == g_EightBallData.gameState.practise then return end
+    --白球进洞处理
+    if rootNode.whiteBall:getIsInHole() then
+        EBGameControl:dealWhiteBallInHole()
+    end
+
+    -- 练习模式不走同步击球结果
+    -- 如果ballsResultArray.UserID不存在就说明消息还没回来，这时候需要return出来等待消息回来主动调用此函数
+    -- userid是空也代表存在异常，解决了击打者击打完会出现杆子0.5秒再消失的bug
+    if EBGameControl:getGameState() == g_EightBallData.gameState.practise 
+    or not next(ballsResultArray) or not ballsResultArray.UserID then 
+        return
+    end
     
     EightBallGameManager:setCurrentUserID(ballsResultArray.UserID)
+    print("this round hit ball userid = ",ballsResultArray.UserID)
     if ballsResultArray.UserID == player:getPlayerUserID() then
         --我的回合
         rootNode.slider_PowerBar:setTouchEnabled(true)
@@ -159,17 +179,25 @@ function EightBallGameManager:syncHitResult(rootNode)
     end
     --设置我的击球颜色
     EightBallGameManager:setColorUserID(ballsResultArray.FullColorUserID,ballsResultArray.HalfColorUserID)
+
+    --result获取比赛当前状态
     local func = switch[ballsResultArray.Result]
     if func then
         func()
     end
+    --首杆黑八进洞，重新摆放球开始比赛
+    if ballsResultArray.Result == g_EightBallData.gameRound.restart then
+        EBGameControl:startGame(rootNode)
+        return
+    end
+
     -- 结束同步最后同步一下结果函数
-    if not isCorrect and #ballsResultArray > 0 then
+    if not isCorrect and ballsResultArray and next(ballsResultArray) then
         local ballsArray = ballsResultArray.BallInfoArray
         for i = 0, 15 do
             local ball = rootNode.desk:getChildByTag(i)
             if ball then
-                ball:setBallsResultState(ballsArray[i + 1])
+                ball:setBallsResultState(ballsArray[i + 1],rootNode)
             end
         end
         isCorrect = true
@@ -178,6 +206,10 @@ function EightBallGameManager:syncHitResult(rootNode)
     if rootNode.whiteBall:getIsInHole() then
         EBGameControl:dealWhiteBallInHole()
     end
+    rootNode.cue:setRotationOwn(0,rootNode) --击球结束同步一下结果
+    rootNode.cue:setCueLineCircleVisible(true)
+    rootNode.cue:setRotationOwn(0,rootNode)
+
 end
 
 
@@ -216,13 +248,23 @@ function EightBallGameManager:getMyColor()
     --还没判断好谁打全色球谁打半色球,或者不是我的轮次，自动白色圈圈
     if mFullColorUserID == -1 or mHalfColorUserID == -1 or mCurrentUserID ~= player:getPlayerUserID() then
         return -1
-    end
-    if player:getPlayerUserID() == mFullColorUserID then
+    elseif player:getPlayerUserID() == mFullColorUserID then
         return 1
     elseif player:getPlayerUserID() == mHalfColorUserID then
         return 2
+    else
+        return 0
     end
-    return 0
+end
+
+
+local mCanOperate = true  --是否可以操作界面
+function EightBallGameManager:setCanOperate(canOperate)
+    mCanOperate = canOperate
+end
+
+function EightBallGameManager:getCanOperate()
+    return mCanOperate
 end
 
 --初始化函数
@@ -234,6 +276,63 @@ function EightBallGameManager:initialize()
     hitWhiteBallResult = nil
     mFullColorUserID = -1
     mHalfColorUserID = -1
+    mCanOperate = true
+end
+
+
+local effectSwitch = {
+    [g_EightBallData.effect.ball] = function ()
+        return "gameBilliards/sound/BallHit.wav"
+    end,
+    [g_EightBallData.effect.cue] = function ()
+        return "gameBilliards/sound/CueHit.wav"
+    end,
+    [g_EightBallData.effect.pocket] = function ()
+        return "gameBilliards/sound/Pocket.wav"
+    end,
+    [g_EightBallData.effect.fineTurning] = function ()
+        return "gameBilliards/sound/Fine_Tuning.mp3"
+    end,
+    [g_EightBallData.effect.back] = function ()
+        return "gameBilliards/sound/Billiards_Bg_2.mp3"
+    end,
+}
+
+
+-- 播放音效
+-- 这里有点乱，待整理
+function EightBallGameManager:playEffect(nType,fVolume)
+    
+    if device.platform == "windows" then return end
+
+    local volume = 1.0
+    if fVolume then
+        volume = fVolume
+    end
+    local path
+    local funcEffect = effectSwitch[nType]
+    if funcEffect then
+        path = funcEffect()
+    end
+    amgr.playEffect(path, false, false,volume)
+end
+
+function EightBallGameManager:playEffectByTag(tagA,tagB,velocity)
+    if velocity > 1000.0 then
+        velocity = 1000.0
+    end
+    if tagA and tagB then
+        -- 这是球和球的碰撞
+        if tagA <= 15 and tagB <= 15 then
+            if velocity then
+                EightBallGameManager:playEffect(g_EightBallData.effect.ball,velocity/1000)
+            else
+                EightBallGameManager:playEffect(g_EightBallData.effect.ball)
+            end
+        elseif tagA == g_EightBallData.g_Border_Tag.hole or tagB == g_EightBallData.g_Border_Tag.hole then
+            EightBallGameManager:playEffect(g_EightBallData.effect.pocket)
+        end
+    end
 end
 
 return EightBallGameManager

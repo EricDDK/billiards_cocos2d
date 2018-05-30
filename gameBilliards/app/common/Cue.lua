@@ -161,6 +161,7 @@ function Cue:receiveLauchBall(event, callback)
             m_RootBall:getPhysicsBody():setAngularVelocity(event.fAngularVelocity)
             m_RootBall:getPhysicsBody():applyForce(cc.p(event.fUnevenBarsX, event.fUnevenBarsY), cc.p(0, 0))
             m_RootBall:setWhiteBallContinuesForce(cc.p(event.fUnevenBarsX, event.fUnevenBarsY))
+            EightBallGameManager:playEffect(g_EightBallData.effect.cue)
             if callback then
                 callback()-- 击球后就回调开始帧同步
             end
@@ -196,8 +197,9 @@ function Cue:setRotationOwn(rotate,rootNode)
     PhyControl:drawRouteDetection(rotate,self,m_RootBall,rootNode)
 end
 
---设置瞄准线，杆，路径视图
---isVisible bool 是否看得见
+-- 设置瞄准线，杆，路径视图
+-- 是否看得见瞄准线，圆球线，路径检测线
+-- isVisible bool 是否看得见
 function Cue:setCueLineCircleVisible(isVisible)
     local lineCheck = m_RootBall:getChildByTag(g_EightBallData.g_Border_Tag.lineCheck)
     if lineCheck then

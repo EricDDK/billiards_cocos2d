@@ -76,6 +76,14 @@ EightBallDefine.radius_3D = cc.Sprite3D:create("gameBilliards/3d_ball/ball.obj")
 
 ----------------------------------------------------------------------------------------------------------
 
+EightBallDefine.effect = {
+    ball = 1,
+    cue = 2,
+    pocket = 3,
+    fineTurning = 4,
+    back = 5,
+}
+
 EightBallDefine.ballState = {
     stop = 0,
     run = 1,

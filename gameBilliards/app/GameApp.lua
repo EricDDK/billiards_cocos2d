@@ -29,6 +29,11 @@ function GameApp:run()
     else
         cc.Director:getInstance():runWithScene(pScene)
     end
+
+    if device.platform ~= "windows" then
+        amgr.playMusic("gameBilliards/sound/Billiards_Bg_2.mp3", true)
+    end
+
 end
 
 return GameApp

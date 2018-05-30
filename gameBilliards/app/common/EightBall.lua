@@ -167,7 +167,8 @@ end
 -- 
 local oldWhiteBallPos = {}--保留初始白球位置,在放置错误位置时可以放置
 --@ isReceive 是否是接受数据后调用的函数
-function EightBall:whiteBallTouchBegan(rootNode,posX,posY,isReceive)
+--@ isLimitedPos 是否是开球的摆放球位置,限制开球区域
+function EightBall:whiteBallTouchBegan(rootNode,posX,posY,isReceive,isLimitedPos)
     posX = GetPreciseDecimal(posX)
     posY = GetPreciseDecimal(posY)
     oldWhiteBallPos.x = posX
@@ -182,7 +183,7 @@ function EightBall:whiteBallTouchBegan(rootNode,posX,posY,isReceive)
 end
 
 --@ isReceive 是否是接受到移动白球消息的移动
-function EightBall:whiteBallTouchEnded(rootNode,pos,isReceive)
+function EightBall:whiteBallTouchEnded(rootNode,pos,isReceive,isLimitedPos)
     pos.x = GetPreciseDecimal(pos.x)
     pos.y = GetPreciseDecimal(pos.y)
     local cue = self:getChildByTag(g_EightBallData.g_Border_Tag.cue)
@@ -216,7 +217,7 @@ function EightBall:whiteBallTouchEnded(rootNode,pos,isReceive)
 end
 
 --@ isReceive 是否是接受到移动白球消息的移动
-function EightBall:whiteBallTouchMoved(rootNode,pos,isReceive)
+function EightBall:whiteBallTouchMoved(rootNode,pos,isReceive,isLimitedPos)
     pos.x = GetPreciseDecimal(pos.x)
     pos.y = GetPreciseDecimal(pos.y)
     local whiteShadow = self:getChildByTag(g_EightBallData.g_Border_Tag.whiteShadow)
@@ -301,12 +302,13 @@ function EightBall:getBallSyncState()
 end
 
 -- 收到服务器同步的结果消息，同步球的所有位置
-function EightBall:setBallsResultState(event)
+function EightBall:setBallsResultState(event,rootNode)
     local posX = GetPreciseDecimal(event.fPositionX)
     local posY = GetPreciseDecimal(event.fPositionY)
     if self:getTag() == 0 then
         local rotate = GetPreciseDecimal(event.fAngularVelocity)
         self:setRotation(rotate)
+        print("EightBall setBallsResultState  whiteBall rotation = ",rotate)
     end
     self:setPosition(cc.p(posX,posY))
 end
@@ -319,6 +321,7 @@ function EightBall:getBallsResultState()
     local angularVelocity = 0
     if self:getTag() == 0 then
         angularVelocity = self:getRotation()
+        print("EightBall:getBallsResultState() white ball rotation = ",angularVelocity)
     end
     --保留小数点后5位
     return {

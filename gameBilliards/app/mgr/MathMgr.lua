@@ -231,6 +231,19 @@ function mathMgr:changeAngleTo0to360(angle)
     return angle
 end
 
+
+--判断白球位置是否在边界外
+function mathMgr:checkBallLocationIsOut(rootNode, pos, whiteBall)
+    local desk = rootNode.desk
+    local radius = whiteBall:getContentSize().width / 2
+    local deskWidth = rootNode.desk:getContentSize().width
+    local deskHeight = rootNode.desk:getContentSize().height
+    if pos.x >(60 + radius) and pos.x <(913 - radius) and pos.y >(60 + radius) and pos.y <(489 - radius) then
+        return false
+    end
+    return true
+end
+
 --判断白球位置是否合法
 --@ rootNode 游戏图层self
 --@ pos 白球位置，desk的相对位置

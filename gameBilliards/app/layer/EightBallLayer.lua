@@ -196,7 +196,7 @@ function EightBallLayer:receiveSetWhiteBall(event)
     print("EightBallLayer:receiveSetWhiteBall")
     event.fPositionX = GetPreciseDecimal(event.fPositionX)
     event.fPositionY = GetPreciseDecimal(event.fPositionY)
-    dump(event)
+    --dump(event)
     if event.UserID ~= player:getPlayerUserID() then
         local pos = {x = event.fPositionX,y = event.fPositionY}
         self.whiteBall:whiteBallTouchBegan(self,event.fPositionX,event.fPositionY,true)
@@ -208,7 +208,7 @@ end
 function EightBallLayer:receiveSetCueInfo(event)
     print("EightBallLayer:receiveSetCueInfo")
     event.fAngle = GetPreciseDecimal(event.fAngle)
-    dump(event)
+    --dump(event)
     if event.UserID ~= player:getPlayerUserID() then
         self.cue:setRotationOwn(event.fAngle,self)
     end
@@ -246,8 +246,13 @@ function EightBallLayer:receiveHitBallResult(event)
 
     EightBallGameManager:clearBallsProcess() --清除本地球过程统计数组
     EightBallGameManager:setBallsResultPos(event)
+
+    --如果定时器已经停止，说明网络延迟，所以同步
+    --@这里需要延迟是因为会出现白球卡的情况
     if not m_ballCheckStopSchedulerEntry then
-        EightBallGameManager:syncHitResult(self) --如果定时器已经停止，说明网络延迟，所以同步
+        self:runAction(cc.Sequence:create(cc.DelayTime:create(1),cc.CallFunc:create(function ()
+            EightBallGameManager:syncHitResult(self)
+        end)))
     end
 end
 
@@ -406,7 +411,6 @@ end
 --开启帧同步定时器
 function EightBallLayer:openSyncBallTimeEntry()
     local function synchronizeUpdate(dt)
-        print("synchronizeUpdate",dt)
         mSyncFrameIndex = mSyncFrameIndex + 1
 
         ----------------------------------------------------------------------------------------------------------------------------------
@@ -422,7 +426,7 @@ function EightBallLayer:openSyncBallTimeEntry()
             EBGameControl:sendSyncBalls(mSyncFrameIndex)
         else
             local syncArray = EightBallGameManager:getSyncBallArray()
-            _print("the deal with receive sync frame index = ", mSyncFrameIndex)
+            --_print("the deal with receive sync frame index = ", mSyncFrameIndex)
 
             ----------------------------------------------------------------------------------------------------------------------------------
 --            --测试输出
@@ -486,35 +490,36 @@ function EightBallLayer:openCheckStopTimeEntry()
                 end
             end
             if self and not tolua.isnull(self) then
-                if self.desk:getChildByTag(0):getBallState() ~= g_EightBallData.ballState.inHole  then
+                if self.desk:getChildByTag(0):getBallState() ~= g_EightBallData.ballState.inHole and
+                EBGameControl:getGameState() == g_EightBallData.gameState.practise then
                     self.cue:setCueLineCircleVisible(true)
                 end
                 self:closeCheckStopTimeEntry()
                 self:closeSyncBallTimeEnter()
             end
-
-            if self.whiteBall:getIsInHole() then
-                self.whiteBall:runAction(cc.Sequence:create(cc.DelayTime:create(1.2),cc.CallFunc:create(function ()
-                    EBGameControl:dealWhiteBallInHole()
-                    if EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
-                        EBGameControl:sendHitBallsResult(mCurrentUserID) --发送击球结果消息
-                        EightBallGameManager:syncHitResult(self) --同步一下击球结果，所有球位置
+            self.whiteBall:runAction(cc.Sequence:create(cc.DelayTime:create(1),cc.CallFunc:create(function ()
+                if EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
+                    EBGameControl:sendHitBallsResult(EightBallGameManager:getCurrentUserID()) --发送击球结果消息
+                    EightBallGameManager:syncHitResult(self) --同步一下击球结果，所有球位置
+                else
+                    --白球进洞处理(练习模式下)
+                    if self.whiteBall:getIsInHole() then
+                        EBGameControl:dealWhiteBallInHole()
                     end
-                end)))
-            else
-                EBGameControl:sendHitBallsResult(mCurrentUserID) --发送击球结果消息
-                EightBallGameManager:syncHitResult(self) --同步一下击球结果，所有球位置
-            end
+                end
+            end)))
 
---            EBGameControl:sendHitBallsResult(mCurrentUserID) --发送击球结果消息
---            EightBallGameManager:syncHitResult(self) --同步一下击球结果，所有球位置
---            --练习模式结束后再摆放球
---            if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
---                if self.whiteBall:getIsInHole() then
---                    self.whiteBall:runAction(cc.Sequence:create(cc.DelayTime:create(1),cc.CallFunc:create(function ()
---                        EBGameControl:dealWhiteBallInHole()
---                    end)))
---                end
+--            if self.whiteBall:getIsInHole() then
+--                self.whiteBall:runAction(cc.Sequence:create(cc.DelayTime:create(0.5),cc.CallFunc:create(function ()
+--                    EBGameControl:dealWhiteBallInHole()
+--                    if EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
+--                        EBGameControl:sendHitBallsResult(EightBallGameManager:getCurrentUserID()) --发送击球结果消息
+--                        EightBallGameManager:syncHitResult(self) --同步一下击球结果，所有球位置
+--                    end
+--                end)))
+--            else
+--                EBGameControl:sendHitBallsResult(EightBallGameManager:getCurrentUserID()) --发送击球结果消息
+--                EightBallGameManager:syncHitResult(self) --同步一下击球结果，所有球位置
 --            end
         end
     end
