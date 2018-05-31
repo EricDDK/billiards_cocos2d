@@ -161,7 +161,7 @@ function Cue:receiveLauchBall(event, callback)
             m_RootBall:getPhysicsBody():setAngularVelocity(event.fAngularVelocity)
             m_RootBall:getPhysicsBody():applyForce(cc.p(event.fUnevenBarsX, event.fUnevenBarsY), cc.p(0, 0))
             m_RootBall:setWhiteBallContinuesForce(cc.p(event.fUnevenBarsX, event.fUnevenBarsY))
-            EightBallGameManager:playEffect(g_EightBallData.effect.cue)
+            EightBallGameManager:playEffect(g_EightBallData.sound.cue)
             if callback then
                 callback()-- 击球后就回调开始帧同步
             end

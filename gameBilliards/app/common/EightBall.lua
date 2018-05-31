@@ -11,10 +11,11 @@ function EightBall:adjustHighLight()
 end
 
 -- 调整速度，刷新,3D动画的刷新以及速度的刷新
-function EightBall:adjustBallSpeed()
+--@nTime 这次击打的当前时间，也就是多少帧
+function EightBall:adjustBallSpeed(nTime)
     local velocity = self:getPhysicsBody():getVelocity()
     local v = math.pow(velocity.x, 2) + math.pow(velocity.y, 2)
-    if v <= g_EightBallData.ballDampingValue then
+    if nTime and nTime > 2 and v <= g_EightBallData.ballDampingValue then
         self:getPhysicsBody():setLinearDamping(g_EightBallData.ballLinearDamping * g_EightBallData.ballLinearIncreaseMultiple)
         if v <= g_EightBallData.ballDoubleDampingValue then
             self:getPhysicsBody():setLinearDamping(g_EightBallData.ballLinearDamping * g_EightBallData.ballLinearIncreaseDoubleMultiple)
@@ -53,10 +54,36 @@ function EightBall:resetForceAndEffect()
     end
     if self:getTag() == g_EightBallData.g_Border_Tag.whiteBall then
         local cueRotate = mathMgr:changeAngleTo0to360(self:getRotation())
-        self:setRotation(cueRotate)
+        self:setRotationOwn(cueRotate)
     end
     if self:getBallState() ~= g_EightBallData.ballState.inHole then
         self:setBallState(g_EightBallData.ballState.stop)
+    end
+end
+
+-- 处理白球上的指示符视图
+--@ 放白球的手，禁止标志清除
+function EightBall:clearWhiteBallView()
+    local whiteShadow = self:getChildByTag(g_EightBallData.g_Border_Tag.whiteShadow)
+    local moveHand = self:getChildByTag(g_EightBallData.g_Border_Tag.moveHand)
+    local fobbiden = self:getChildByTag(g_EightBallData.g_Border_Tag.forbidden)
+    if whiteShadow and moveHand and fobbiden then
+        whiteShadow:setVisible(isVisible)
+        moveHand:setVisible(isVisible)
+        fobbiden:setVisible(isVisible)
+    end
+end
+
+-- 处理白球进洞
+function EightBall:dealWhiteBallInHole()
+    local whiteShadow = self:getChildByTag(g_EightBallData.g_Border_Tag.whiteShadow)
+    -- local moveHand = self:getChildByTag(g_EightBallData.g_Border_Tag.moveHand)
+    if whiteShadow then
+        if EightBallGameManager:returnIsMyOperate() then
+            whiteShadow:setVisible(true)
+        else
+            whiteShadow:setVisible(false)
+        end
     end
 end
 
@@ -69,7 +96,7 @@ end
 function EightBall:resetBallState()
     self:setScale(g_EightBallData.radius/(self:getContentSize().width/2))
     self:setBallState(g_EightBallData.ballState.stop)
-    self:setRotation(0)
+    self:setRotationOwn(0)
     if self:getTag() == 0 then
         local cue = self:getChildByTag(g_EightBallData.g_Border_Tag.cue)
         if cue then
@@ -102,6 +129,8 @@ function EightBall:ctor(nTag)
     --self:setRotation(90)  --测试用
     if nTag == g_EightBallData.g_Border_Tag.whiteBall then
         self:loadOtherCompernent()
+    else
+        self:loadTipsEffect()
     end
 end
 
@@ -162,6 +191,43 @@ function EightBall:reset3DRender()
     
 end
 
+--tips事件，球体最下层的指示框，提醒玩家该不该打这个球
+function EightBall:loadTipsEffect()
+    if self:getBallState() ~= g_EightBallData.g_Border_Tag.inHole then
+        local radius = self:getContentSize().width / 2
+        local tips = cc.Sprite:create("gameBilliards/eightBall/eightBall_Tips.png")
+        if tips then
+            tips:setTag(g_EightBallData.g_Border_Tag.tips)
+            tips:setPosition(cc.p(radius, radius))
+            tips:setScale(0.5)
+            self:addChild(tips)
+        end
+    end
+end
+
+function EightBall:startTipsEffect()
+    local action1 = cc.ScaleTo:create(1, 1.3)
+    local action2 = cc.ScaleTo:create(1, 0.5)
+    local action = cc.RepeatForever:create(cc.Sequence:create(action1, action2))
+    local tips = self:getChildByTag(g_EightBallData.g_Border_Tag.tips)
+    if tips and not tolua.isnull(tips) then
+        tips:runAction(action)
+        tips:runAction(cc.Sequence:create(cc.DelayTime:create(6),cc.CallFunc:create(function ()
+            if self and not tolua.isnull(self) then
+                self:stopTipsEffect()
+            end
+        end)))
+    end
+end
+
+function EightBall:stopTipsEffect()
+    local tips = self:getChildByTag(g_EightBallData.g_Border_Tag.tips)
+    if tips and not tolua.isnull(tips) then
+        tips:stopAllActions()
+        tips:setScale(0.5)
+    end
+end
+
 -- 白球触摸事件
 -- ----------------------------------------------------------------------------
 -- 
@@ -209,9 +275,7 @@ function EightBall:whiteBallTouchEnded(rootNode,pos,isReceive,isLimitedPos)
         if not isReceive then
             self:sendSetWhiteBallMessage(pos.x,pos.y,rootNode,true)
         end
-        
     else
-        print("============whiteBallTouchEnded============")
         self:setPosition(cc.p(oldWhiteBallPos.x,oldWhiteBallPos.y))
     end
 end
@@ -307,7 +371,7 @@ function EightBall:setBallsResultState(event,rootNode)
     local posY = GetPreciseDecimal(event.fPositionY)
     if self:getTag() == 0 then
         local rotate = GetPreciseDecimal(event.fAngularVelocity)
-        self:setRotation(rotate)
+        self:setRotationOwn(rotate)
         print("EightBall setBallsResultState  whiteBall rotation = ",rotate)
     end
     self:setPosition(cc.p(posX,posY))
@@ -369,6 +433,27 @@ function EightBall:getIsInHole()
     return ballState == g_EightBallData.ballState.inHole
     or self:getPositionX() < 0 or self:getPositionX() > 968 
     or self:getPositionY() < 0 or self:getPositionY() > 547
+end
+
+--封装一个
+function EightBall:setRotationOwn(rotate)
+    if self:getTag() == g_EightBallData.g_Border_Tag.whiteBall then
+        self:setRotation(rotate)
+        local whiteShadow = self:getChildByTag(g_EightBallData.g_Border_Tag.whiteShadow)
+        local moveHand = self:getChildByTag(g_EightBallData.g_Border_Tag.moveHand)
+        local forbidden = self:getChildByTag(g_EightBallData.g_Border_Tag.forbidden)
+        if whiteShadow then
+            whiteShadow:setRotation(360 - rotate)
+        end
+        if moveHand then
+            moveHand:setRotation(360 - rotate)
+        end
+        if forbidden then
+            forbidden:setRotation(360 - rotate)
+        end
+    else
+        self:setRotation(rotate)
+    end
 end
 
 return EightBall

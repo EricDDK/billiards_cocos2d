@@ -1,6 +1,10 @@
 EightBallGameManager = EightBallGameManager or {}
 
-local mCurrentUserID = -1 -- 当前可操作userid
+local mCurrentUserID                    = -1    -- 当前可操作userid
+local mFullColorUserID                  = -1    -- 击打全色球的userid
+local mHalfColorUserID                  = -1    -- 击打半色球的userid
+
+
 --获取是不是我击球
 function EightBallGameManager:returnIsMyOperate()
     --如果是练习模式，就是我
@@ -69,8 +73,8 @@ local hitBallsProcessArray = {
     firstCollisionIndex = 0,
     firstInHoleBall = -1,
 }
---处理碰撞
-function EightBallGameManager:dealCollision(tagA,tagB)
+--处理碰撞，保存数据发送给服务端做校验
+function EightBallGameManager:dealCollisionToServer(tagA,tagB)
     if tagA and tagB then
         if tagA == g_EightBallData.g_Border_Tag.border or tagB == g_EightBallData.g_Border_Tag.border then
             hitBallsProcessArray.collisionBorderCount = hitBallsProcessArray.collisionBorderCount + 1
@@ -87,10 +91,15 @@ function EightBallGameManager:dealCollision(tagA,tagB)
     return
 end
 
---处理进球
-function EightBallGameManager:dealInHole(tag)
+--处理进球，保存数据发送给服务端做校验
+function EightBallGameManager:dealInHoleToServer(tag)
+    -- 不是白球的进球才计算
     if tag ~= g_EightBallData.g_Border_Tag.whiteBall and tag <= 15 and tag >= 1 then
         hitBallsProcessArray.firstInHoleBall = tag
+        --练习模式处理进球，加连杆数
+        if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
+            EightBallGameManager:setLinkCount(true)
+        end
     end
 end
 
@@ -110,10 +119,10 @@ end
 --@ 保存服务器发送的击球统计结果
 --@ 调整所有球的位置精度
 local ballsResultArray = {}
-local isCorrect = false
+local isSyncHitResult = false  --是否同步过数据，一个数据包同步一次
 function EightBallGameManager:setBallsResultPos(event)
     ballsResultArray = event
-    isCorrect = false
+    isSyncHitResult = false
 end
 
 function EightBallGameManager:getBallsResultPos()
@@ -155,6 +164,10 @@ local switch = {
 -- 同步一下结果，所有球位置修正
 --@ rootNode 游戏主layer
 function EightBallGameManager:syncHitResult(rootNode)
+    if isSyncHitResult then
+        return
+    end
+    isSyncHitResult = true
     --白球进洞处理
     if rootNode.whiteBall:getIsInHole() then
         EBGameControl:dealWhiteBallInHole()
@@ -178,7 +191,7 @@ function EightBallGameManager:syncHitResult(rootNode)
         rootNode.slider_PowerBar:setTouchEnabled(false)
     end
     --设置我的击球颜色
-    EightBallGameManager:setColorUserID(ballsResultArray.FullColorUserID,ballsResultArray.HalfColorUserID)
+    EightBallGameManager:setColorUserID(ballsResultArray.FullColorUserID,ballsResultArray.HalfColorUserID,rootNode)
 
     --result获取比赛当前状态
     local func = switch[ballsResultArray.Result]
@@ -189,10 +202,19 @@ function EightBallGameManager:syncHitResult(rootNode)
     if ballsResultArray.Result == g_EightBallData.gameRound.restart then
         EBGameControl:startGame(rootNode)
         return
+    --换你击球
+    elseif (ballsResultArray.Result == g_EightBallData.gameRound.change or ballsResultArray.Result == g_EightBallData.gameRound.foul )
+    and player:getPlayerUserID() == mCurrentUserID then
+        BilliardsAniMgr:createWordEffect(rootNode, g_EightBallData.word.your)
+    end
+
+    --显示连杆动画
+    if ballsResultArray.LinkCount and ballsResultArray.LinkCount > 1 then
+        BilliardsAniMgr:createLinkEffect(rootNode,ballsResultArray.LinkCount)
     end
 
     -- 结束同步最后同步一下结果函数
-    if not isCorrect and ballsResultArray and next(ballsResultArray) then
+    if ballsResultArray and next(ballsResultArray) then
         local ballsArray = ballsResultArray.BallInfoArray
         for i = 0, 15 do
             local ball = rootNode.desk:getChildByTag(i)
@@ -200,7 +222,6 @@ function EightBallGameManager:syncHitResult(rootNode)
                 ball:setBallsResultState(ballsArray[i + 1],rootNode)
             end
         end
-        isCorrect = true
         ballsResultArray = { }
     end
     if rootNode.whiteBall:getIsInHole() then
@@ -210,6 +231,20 @@ function EightBallGameManager:syncHitResult(rootNode)
     rootNode.cue:setCueLineCircleVisible(true)
     rootNode.cue:setRotationOwn(0,rootNode)
 
+    EightBallGameManager:setCanOperate(true) --可以操作了
+
+    --球体底层提示框架（这里是三目，当前轮需要是我）
+    --value = 1 打全色  || value = 2 打半色
+    local value =(mFullColorUserID == player:getPlayerUserID() and mCurrentUserID == player:getPlayerUserID()) and 1
+    or((mHalfColorUserID == player:getPlayerUserID() and mCurrentUserID == player:getPlayerUserID()) and 9 or 0)
+    if value == 1 or value == 9 then
+        for i=value,value + 6 do
+            local ball = rootNode.desk:getChildByTag(i)
+            if ball then
+                ball:startTipsEffect()
+            end
+        end
+    end
 end
 
 
@@ -231,11 +266,16 @@ function EightBallGameManager:init()
     
 end
 
-
-local mFullColorUserID = -1 -- 击打全色球的userid
-local mHalfColorUserID = -1 -- 击打半色球的userid
 --是否打全色球
-function EightBallGameManager:setColorUserID(fullColorUserID,halfColorUserID)
+function EightBallGameManager:setColorUserID(fullColorUserID,halfColorUserID,rootNode)
+    -- 播放击打全色还是花色动画
+    if mFullColorUserID == -1 or mHalfColorUserID == -1 then
+        if player:getPlayerUserID() == fullColorUserID then
+            BilliardsAniMgr:createWordEffect(rootNode, g_EightBallData.word.full)
+        elseif player:getPlayerUserID() == halfColorUserID then
+            BilliardsAniMgr:createWordEffect(rootNode, g_EightBallData.word.half)
+        end
+    end
     mFullColorUserID = fullColorUserID
     mHalfColorUserID = halfColorUserID
 end
@@ -267,33 +307,61 @@ function EightBallGameManager:getCanOperate()
     return mCanOperate
 end
 
+
+-- 练习模式使用，连击数
+local mLinkCount = 0  --连击数
+local canCalcurateLinkCount = true  --可以连杆数自加1嘛
+function EightBallGameManager:setLinkCount(isInHole)
+    if isInHole and canCalcurateLinkCount then
+        mLinkCount = mLinkCount + 1
+        canCalcurateLinkCount = false
+    else
+        mLinkCount = 0
+    end
+end
+
+function EightBallGameManager:getLinkCount()
+    --说明没有进球，所以连杆数变0
+    if canCalcurateLinkCount then
+        mLinkCount = 0
+    end
+    print("   getLinkCount   = ",mLinkCount)
+    return mLinkCount
+end
+
+function EightBallGameManager:resetCanCalcurateLinkCount()
+    canCalcurateLinkCount = true
+end
+
+
 --初始化函数
 function EightBallGameManager:initialize()
     mCurrentUserID = -1
     syncBallArray = {}
     ballsResultArray = {}
-    isCorrect = false
+    isSyncHitResult = false
     hitWhiteBallResult = nil
     mFullColorUserID = -1
     mHalfColorUserID = -1
     mCanOperate = true
+    mLinkCount = 0
 end
 
 
 local effectSwitch = {
-    [g_EightBallData.effect.ball] = function ()
+    [g_EightBallData.sound.ball] = function ()
         return "gameBilliards/sound/BallHit.wav"
     end,
-    [g_EightBallData.effect.cue] = function ()
+    [g_EightBallData.sound.cue] = function ()
         return "gameBilliards/sound/CueHit.wav"
     end,
-    [g_EightBallData.effect.pocket] = function ()
+    [g_EightBallData.sound.pocket] = function ()
         return "gameBilliards/sound/Pocket.wav"
     end,
-    [g_EightBallData.effect.fineTurning] = function ()
+    [g_EightBallData.sound.fineTurning] = function ()
         return "gameBilliards/sound/Fine_Tuning.mp3"
     end,
-    [g_EightBallData.effect.back] = function ()
+    [g_EightBallData.sound.back] = function ()
         return "gameBilliards/sound/Billiards_Bg_2.mp3"
     end,
 }
@@ -325,12 +393,12 @@ function EightBallGameManager:playEffectByTag(tagA,tagB,velocity)
         -- 这是球和球的碰撞
         if tagA <= 15 and tagB <= 15 then
             if velocity then
-                EightBallGameManager:playEffect(g_EightBallData.effect.ball,velocity/1000)
+                EightBallGameManager:playEffect(g_EightBallData.sound.ball,velocity/1000)
             else
-                EightBallGameManager:playEffect(g_EightBallData.effect.ball)
+                EightBallGameManager:playEffect(g_EightBallData.sound.ball)
             end
         elseif tagA == g_EightBallData.g_Border_Tag.hole or tagB == g_EightBallData.g_Border_Tag.hole then
-            EightBallGameManager:playEffect(g_EightBallData.effect.pocket)
+            EightBallGameManager:playEffect(g_EightBallData.sound.pocket)
         end
     end
 end

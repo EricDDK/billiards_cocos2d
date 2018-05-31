@@ -171,7 +171,7 @@ function PhyControl:resetAllBallsPos(rootNode)
             ballPos.y = ballPos.y + diameter
             local ball = desk:getChildByTag(ballPosIndex[curNumber].index)
             ball:setPosition(ballPos)
-            ball:setRotation(0)
+            ball:setRotationOwn(0)
             curNumber = curNumber + 1
             if j == i then
                 ballPos.y = curColY+ (diameter)/2  --末尾放置

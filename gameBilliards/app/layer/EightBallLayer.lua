@@ -12,6 +12,7 @@ local nText_VS                      = 120       -- 比分文字信息(1:5)
 local nSlider_PowerBar              = 21        -- 力量条
 local nScroll_PowerCue              = 22        -- 力量杆裁剪容器
 local nImg_PowerCue                 = 23        -- 力量杆图片
+local nSlider_View                  = 24        -- 力量条屏幕中间视图
 
 local nPanel_FineTurning            = 31        -- 微调框裁剪
 local nImg_FineTurning1             = 32        -- 微调框图1
@@ -29,6 +30,7 @@ local nImg_Desk                     = 54        -- *桌子
 local m_rotateX                     = 0         -- 高低杆x
 local m_rotateY                     = 0         -- 高低杆y
 local mSyncFrameIndex               = 0         -- 帧同步当前帧(0.1秒同步一次)
+local mTime                         = 0         -- 记录定时器总跑的时间
 
 --------------------定时器--------------------
 
@@ -175,8 +177,7 @@ end
 
 function EightBallLayer:receiveGameStart(event)
     print("EightBallLayer:receiveGameStart")
-    dump(event)
-
+    --dump(event)
     self:restart()
     EBGameControl:startGame(self)
     if event.UserID == player:getPlayerUserID() then
@@ -225,15 +226,26 @@ end
 function EightBallLayer:receiveHitWhiteBall(event)
     print("EightBallLayer:receiveHitWhiteBall")
     dump(event)
+
     local userid = ((player:getPlayerUserID() == event.UserID) and {player:getPlayerUserID()} or {event.UserID})[1]
     EightBallGameManager:setCurrentUserID(userid)
     --开启定时器的回调函数
     local hitWhiteBallCallback = function(data)
         if self and not tolua.isnull(self) then
+            self.whiteBall:clearWhiteBallView()  --击打球前清除白球上的视图
             self:openSyncBallTimeEntry()
             self:openCheckStopTimeEntry()
+            EightBallGameManager:setCanOperate(false)
         end
     end
+    --停止tips动画
+    for i = 0, 15 do
+        local ball = self.desk:getChildByTag(i)
+        if ball then
+            ball:stopTipsEffect()
+        end
+    end
+
     self.slider_PowerBar:setPercent(0)
     m_rotateX = 0 m_rotateY = 0
     self.upBallRedPoint:setPosition(cc.p(m_rotateX * 30 + 29.5, m_rotateY * 30 + 29.5))
@@ -243,14 +255,17 @@ end
 function EightBallLayer:receiveHitBallResult(event)
     print("EightBallLayer:receiveHitBallResult")
     --dump(event)
-
     EightBallGameManager:clearBallsProcess() --清除本地球过程统计数组
     EightBallGameManager:setBallsResultPos(event)
 
-    --如果定时器已经停止，说明网络延迟，所以同步
-    --@这里需要延迟是因为会出现白球卡的情况
+    --@ 如果定时器已经停止，说明网络延迟，所以同步
+    --@ 这里需要延迟是因为会出现白球卡的情况
+    --@ event.WholeFrame 这一次击打的总帧数
     if not m_ballCheckStopSchedulerEntry then
-        self:runAction(cc.Sequence:create(cc.DelayTime:create(1),cc.CallFunc:create(function ()
+        local delayTime = event.WholeFrame*0.1 - mTime
+        delayTime = delayTime > 0 and delayTime or 0
+        print(" the delay time of sync hit result = ",delayTime,event.WholeFrame*0.1,mTime)
+        self:runAction(cc.Sequence:create(cc.DelayTime:create(delayTime+1),cc.CallFunc:create(function ()
             EightBallGameManager:syncHitResult(self)
         end)))
     end
@@ -293,7 +308,6 @@ function EightBallLayer:initPhysicalInfo()
     self.cue = PhyControl:initCue(self.whiteBall)
     self.routeLine = self.cue:getChildByTag(g_EightBallData.g_Border_Tag.lineCheck)
     self.cue:setRotationOwn(0,self)
-    --self.whiteBall:getPhysicsBody():setVelocity(cc.p(1000,0))
 end
 
 --创建监听
@@ -305,6 +319,7 @@ end
 --初始化力量条
 function EightBallLayer:initPowerBar(img_PowerBar)
     local function percentChangedEvent(sender, eventType)
+        --松开滑动条
         if eventType == ccui.SliderEventType.slideBallUp then
             if self.slider_PowerBar:getPercent() > 0 then
                 self.cue:launchBall(self.slider_PowerBar:getPercent(), self.desk, m_rotateX, m_rotateY)
@@ -320,13 +335,23 @@ function EightBallLayer:initPowerBar(img_PowerBar)
                 self.slider_PowerBar:setPercent(0)
                 self.cue:setPercent(0)
             end
+            self.slider_View:setVisible(false)
+            self.slider_View:setPercent(0)
+        --滑动条percent发生改变
         elseif eventType == ccui.SliderEventType.percentChanged then
-            self.cue:setPercent(self.slider_PowerBar:getPercent())
+            local percent = self.slider_PowerBar:getPercent()
+            self.slider_View:setPercent(percent)
+            self.cue:setPercent(percent)
+            self.slider_View:setVisible(true)
         end
     end
     self.slider_PowerBar = img_PowerBar:getChildByTag(nSlider_PowerBar)
     self.slider_PowerBar:setSwallowTouches(true)
     self.slider_PowerBar:addEventListener(percentChangedEvent)
+
+    self.slider_View = img_PowerBar:getChildByTag(nSlider_View)
+    self.slider_View:setTouchEnabled(false)
+    self.slider_View:setVisible(false)
 end
 
 local speedCount = 0
@@ -345,7 +370,7 @@ function EightBallLayer:refreshBallAni(isCollision)
     for i = 0, 15 do
         local ball = self.desk:getChildByTag(i)
         if ball then
-            ball:adjustBallSpeed()
+            ball:adjustBallSpeed(mTime)
         end
     end
 end
@@ -379,15 +404,23 @@ function EightBallLayer:btnCallback(sender, eventType)
     end
 end
 
+local test = 1
 --测试用的重置界面按钮事件
 function EightBallLayer:resetBalls()
     EBGameControl:startGame(self)
     EBGameControl:setGameState(g_EightBallData.gameState.practise)
+
+    --BilliardsAniMgr:createLinkEffect(self,test)
+--    BilliardsAniMgr:createWordEffect(self,test)
+--    test = test + 1
 end
 
 --打开高低杆界面
 function EightBallLayer:openWhiteBallLayer()
-    display.getRunningScene():addChild(require("gameBilliards.app.layer.gamebilliardsWhiteBallLayer").new(self,m_rotateX,m_rotateY))
+    if (EightBallGameManager:getCanOperate() and EightBallGameManager:getCurrentUserID() == player:getPlayerUserID())
+    or EBGameControl:getGameState() == g_EightBallData.gameState.practise then
+        display.getRunningScene():addChild(require("gameBilliards.app.layer.gamebilliardsWhiteBallLayer").new(self,m_rotateX,m_rotateY))
+    end
 end
 
 --游戏重新开始
@@ -469,6 +502,7 @@ end
 function EightBallLayer:openCheckStopTimeEntry()
     print("****************openCheckStopTimeEntry****************")
     local function checkCueVisibleState(dt)
+        mTime = mTime + 0.1
         local isAllBallStop = false  --球是否全部停止
         for i = 0, 15 do
             local ball = self.desk:getChildByTag(i)
@@ -491,13 +525,21 @@ function EightBallLayer:openCheckStopTimeEntry()
             end
             if self and not tolua.isnull(self) then
                 if self.desk:getChildByTag(0):getBallState() ~= g_EightBallData.ballState.inHole and
+
+                --练习模式下处理
                 EBGameControl:getGameState() == g_EightBallData.gameState.practise then
                     self.cue:setCueLineCircleVisible(true)
+                    if EightBallGameManager:getLinkCount() > 1 then
+                        BilliardsAniMgr:createLinkEffect(self,EightBallGameManager:getLinkCount())
+                    end
+                    EightBallGameManager:resetCanCalcurateLinkCount() --再次允许连杆数自加1
                 end
                 self:closeCheckStopTimeEntry()
                 self:closeSyncBallTimeEnter()
             end
             self.whiteBall:runAction(cc.Sequence:create(cc.DelayTime:create(1),cc.CallFunc:create(function ()
+
+                --比赛模式下处理
                 if EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
                     EBGameControl:sendHitBallsResult(EightBallGameManager:getCurrentUserID()) --发送击球结果消息
                     EightBallGameManager:syncHitResult(self) --同步一下击球结果，所有球位置
@@ -508,22 +550,10 @@ function EightBallLayer:openCheckStopTimeEntry()
                     end
                 end
             end)))
-
---            if self.whiteBall:getIsInHole() then
---                self.whiteBall:runAction(cc.Sequence:create(cc.DelayTime:create(0.5),cc.CallFunc:create(function ()
---                    EBGameControl:dealWhiteBallInHole()
---                    if EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
---                        EBGameControl:sendHitBallsResult(EightBallGameManager:getCurrentUserID()) --发送击球结果消息
---                        EightBallGameManager:syncHitResult(self) --同步一下击球结果，所有球位置
---                    end
---                end)))
---            else
---                EBGameControl:sendHitBallsResult(EightBallGameManager:getCurrentUserID()) --发送击球结果消息
---                EightBallGameManager:syncHitResult(self) --同步一下击球结果，所有球位置
---            end
         end
     end
     self:closeCheckStopTimeEntry() --防止开两个定时器导致泄漏
+    mTime = 0
     m_ballCheckStopSchedulerEntry = cc.Director:getInstance():getScheduler():scheduleScriptFunc(checkCueVisibleState, 0.1, false)
 end
 

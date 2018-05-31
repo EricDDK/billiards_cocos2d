@@ -31,8 +31,8 @@ function Ball3DRender:ctor(nTag, rootBall)
     self:setCameraMask(cc.CameraFlag.USER2)
     self:setGlobalZOrder(0-nTag)
     --这里如果想要真实台球摆放位置，用random设置角度
-    --self:setRotation3D(cc.vec3(0.0,0.0,0.0))
-    self:setRotation3D(cc.vec3(math.random(0, 180), math.random(0, 180), math.random(0, 180)))
+    self:setRotation3D(cc.vec3(0.0,0.0,0.0))
+    --self:setRotation3D(cc.vec3(math.random(0, 180), math.random(0, 180), math.random(0, 180)))
     rigidBody:setAngularVelocity(cc.vec3(0.0, 0.0, 0.0))
 end
 

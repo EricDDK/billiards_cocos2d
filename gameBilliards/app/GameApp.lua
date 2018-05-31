@@ -8,6 +8,7 @@ g_EightBallData = require("gameBilliards.app.define.EightBallDefine")
 require("gameBilliards.app.mgr.EightBallGameManager")
 require("gameBilliards.app.mgr.ballManager")
 require("gameBilliards.app.mgr.MathMgr")
+require("gameBilliards.app.mgr.BilliardsAnimationManager")
 require("gameBilliards.app.control.PhysicalControl")
 require("gameBilliards.app.control.EightBallGameControl")
 

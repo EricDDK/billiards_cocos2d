@@ -30,12 +30,13 @@ function EBGameControl:dealWhiteBallInHole()
     m_MainLayer.whiteBall:resetForceAndEffect()
     m_MainLayer.whiteBall:resetBallState()
     m_MainLayer.whiteBall:setPosition(270, m_MainLayer.desk:getContentSize().height / 2)
+    m_MainLayer.whiteBall:dealWhiteBallInHole()
 end
 
 --球落袋了
 function EBGameControl:ballInHole(nTag, nNode)
     print(nTag .. " num ball is in hole")
-    EightBallGameManager:dealInHole(nTag)
+    EightBallGameManager:dealInHoleToServer(nTag)
     local ball = m_MainLayer.desk:getChildByTag(nTag)
     if ball and nNode then
         ball:ballGoInHole(nTag)--球进洞(设置一下ballState)
@@ -95,7 +96,7 @@ function EBGameControl:initCheckCollisionListener(root)
             local velocity = velocityA + velocityB
             EightBallGameManager:playEffectByTag(tagA,tagB,velocity) --播放音效
 
-            EightBallGameManager:dealCollision(tagA,tagB)
+            EightBallGameManager:dealCollisionToServer(tagA,tagB)
 
             if tagA == g_EightBallData.g_Border_Tag.whiteBall or tagB == g_EightBallData.g_Border_Tag.whiteBall then
                 m_MainLayer:runAction(cc.Sequence:create(cc.DelayTime:create(0.3), cc.CallFunc:create( function()
@@ -181,6 +182,8 @@ local isReverse = false  --判断点击的是杆子正面还是反向，方向�
 --@ angular 角度微调
 --这里较乱，待整理优化
 function EBGameControl:setCuePosByTouch(pos, isBegan, isEnd, angular)
+    --杆子移动前先清除白球上的提示视图
+    m_MainLayer.whiteBall:clearWhiteBallView()
     --fine turning angular
     if angular then
         if math.abs(angular) > 0.3 then
@@ -286,8 +289,9 @@ end
 local curFineTurningPosY = 0  -- 当前微调框走到哪里了，是否需要重置位置
 local isTouchWhiteBall = false --是否触摸开始时触摸到了白球
 function EBGameControl:onTouchBegan(touch, event)
+    --定时器在跑，result消息没收到，不是我的轮次，none和gameover的state不可以响应触摸
     if m_MainLayer:getTimeEntryIsRunning() or not EightBallGameManager:returnIsMyOperate() or EBGameControl:getGameState() == g_EightBallData.gameState.none 
-    or EBGameControl:getGameState() == g_EightBallData.gameState.gameOver then
+    or EBGameControl:getGameState() == g_EightBallData.gameState.gameOver or not EightBallGameManager:getCanOperate() then
         return true
     end
     isTouchWhiteBall = false
@@ -320,8 +324,9 @@ function EBGameControl:onTouchBegan(touch, event)
 end
 
 function EBGameControl:onTouchEnded(touch, event)
+    --定时器在跑，result消息没收到，不是我的轮次，none和gameover的state不可以响应触摸
     if m_MainLayer:getTimeEntryIsRunning() or not EightBallGameManager:returnIsMyOperate() or EBGameControl:getGameState() == g_EightBallData.gameState.none 
-    or EBGameControl:getGameState() == g_EightBallData.gameState.gameOver then
+    or EBGameControl:getGameState() == g_EightBallData.gameState.gameOver or not EightBallGameManager:getCanOperate() then
         return true
     end
     local fineTurningRect = m_MainLayer.layout_FineTurning:getBoundingBox()
@@ -375,8 +380,9 @@ function EBGameControl:onTouchEnded(touch, event)
 end
 
 function EBGameControl:onTouchMoved(touch, event)
+    --定时器在跑，result消息没收到，不是我的轮次，none和gameover的state不可以响应触摸
     if m_MainLayer:getTimeEntryIsRunning() or not EightBallGameManager:returnIsMyOperate() or EBGameControl:getGameState() == g_EightBallData.gameState.none 
-    or EBGameControl:getGameState() == g_EightBallData.gameState.gameOver then
+    or EBGameControl:getGameState() == g_EightBallData.gameState.gameOver or not EightBallGameManager:getCanOperate() then
         return true
     end
     local fineTurningRect = m_MainLayer.layout_FineTurning:getBoundingBox()
