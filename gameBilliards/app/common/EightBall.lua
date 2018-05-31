@@ -79,6 +79,7 @@ function EightBall:dealWhiteBallInHole()
     local whiteShadow = self:getChildByTag(g_EightBallData.g_Border_Tag.whiteShadow)
     -- local moveHand = self:getChildByTag(g_EightBallData.g_Border_Tag.moveHand)
     if whiteShadow then
+        print("EightBall:dealWhiteBallInHole()   IsMyOperate = ",EightBallGameManager:returnIsMyOperate())
         if EightBallGameManager:returnIsMyOperate() then
             whiteShadow:setVisible(true)
         else
@@ -383,7 +384,11 @@ end
 function EightBall:getBallsResultState()
     local _positionX, _positionY = self:getPosition()
     local angularVelocity = 0
-    if self:getTag() == 0 then
+    if self:getTag() == g_EightBallData.g_Border_Tag.whiteBall then
+        if self:getBallState() == g_EightBallData.ballState.inHole then
+            _positionX = 1500
+            _positionY = 1500
+        end
         angularVelocity = self:getRotation()
         print("EightBall:getBallsResultState() white ball rotation = ",angularVelocity)
     end

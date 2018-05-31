@@ -75,6 +75,8 @@ EightBallDefine.sendSetWhiteBallInterval                = 0.5  --发送重置白
 
 EightBallDefine.sendSetCueInterval                      = 0.5  --发送重置杆子位置消息间隔
 
+EightBallDefine.sendHitResultInterval                   = 1  --发送击球结果消息间隔
+
 ----------------------------------------------------------------------------------------------------------
 
 --@边界刚体属性

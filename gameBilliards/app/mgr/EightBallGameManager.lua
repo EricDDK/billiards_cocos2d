@@ -129,6 +129,10 @@ function EightBallGameManager:getBallsResultPos()
     return ballsResultArray
 end
 
+function EightBallGameManager:getIsSyncHitResult()
+    return isSyncHitResult
+end
+
 --击球结果同步数组
 local switch = {
     [g_EightBallData.gameRound.none] = function()
@@ -169,7 +173,9 @@ function EightBallGameManager:syncHitResult(rootNode)
     end
     isSyncHitResult = true
     --白球进洞处理
+    print("EightBallGameManager:syncHitResult ",debug.traceback())
     if rootNode.whiteBall:getIsInHole() then
+        print("whiteball is in hall !! ")
         EBGameControl:dealWhiteBallInHole()
     end
 
@@ -186,9 +192,13 @@ function EightBallGameManager:syncHitResult(rootNode)
     if ballsResultArray.UserID == player:getPlayerUserID() then
         --我的回合
         rootNode.slider_PowerBar:setTouchEnabled(true)
+        EBGameControl:setSliderBarAni(true)
+        EBGameControl:setFineTurningAni(true)
     else
         --对方回合，我等
         rootNode.slider_PowerBar:setTouchEnabled(false)
+        EBGameControl:setSliderBarAni(false)
+        EBGameControl:setFineTurningAni(false)
     end
     --设置我的击球颜色
     EightBallGameManager:setColorUserID(ballsResultArray.FullColorUserID,ballsResultArray.HalfColorUserID,rootNode)
@@ -202,10 +212,10 @@ function EightBallGameManager:syncHitResult(rootNode)
     if ballsResultArray.Result == g_EightBallData.gameRound.restart then
         EBGameControl:startGame(rootNode)
         return
-    --换你击球
+    --换你击球动画
     elseif (ballsResultArray.Result == g_EightBallData.gameRound.change or ballsResultArray.Result == g_EightBallData.gameRound.foul )
     and player:getPlayerUserID() == mCurrentUserID then
-        BilliardsAniMgr:createWordEffect(rootNode, g_EightBallData.word.your)
+        BilliardsAniMgr:createWordEffect(rootNode, g_EightBallData.word.your)--换你击球文字动画
     end
 
     --显示连杆动画
@@ -216,17 +226,18 @@ function EightBallGameManager:syncHitResult(rootNode)
     -- 结束同步最后同步一下结果函数
     if ballsResultArray and next(ballsResultArray) then
         local ballsArray = ballsResultArray.BallInfoArray
-        for i = 0, 15 do
+        for i = 1, 15 do
             local ball = rootNode.desk:getChildByTag(i)
             if ball then
                 ball:setBallsResultState(ballsArray[i + 1],rootNode)
             end
         end
-        ballsResultArray = { }
     end
-    if rootNode.whiteBall:getIsInHole() then
+    --白球进洞或者击打犯规，处理白球进洞流程，单一入口
+    if rootNode.whiteBall:getIsInHole() or ballsResultArray.Result == g_EightBallData.gameRound.foul then
         EBGameControl:dealWhiteBallInHole()
     end
+
     rootNode.cue:setRotationOwn(0,rootNode) --击球结束同步一下结果
     rootNode.cue:setCueLineCircleVisible(true)
     rootNode.cue:setRotationOwn(0,rootNode)
@@ -245,6 +256,8 @@ function EightBallGameManager:syncHitResult(rootNode)
             end
         end
     end
+
+    ballsResultArray = { }
 end
 
 
