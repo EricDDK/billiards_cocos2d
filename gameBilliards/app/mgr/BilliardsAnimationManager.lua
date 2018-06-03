@@ -143,7 +143,123 @@ function BilliardsAniMgr:createWordEffect(rootNode, nType)
             spineWord = nil
         end
     end )))
+end
 
+--  设置力量条的进场出场动画
+--@ isEnabled 是否是可以点击状态,动画状态
+--@ m_MainLayer 游戏图层
+function BilliardsAniMgr:setSliderBarAni(isEnabled, m_MainLayer)
+    m_MainLayer.img_PowerBar:stopAllActions()
+    local nodeWidth = m_MainLayer.node:getContentSize().width
+    local childWidth = m_MainLayer.img_PowerBar:getContentSize().width
+    if isEnabled then
+        local posX = 0 -(display.width - nodeWidth) / 2 - childWidth
+        if posX ~= m_MainLayer.img_PowerBar:getPositionX() then
+            m_MainLayer.img_PowerBar:setPositionX(posX + childWidth)
+            return
+        end
+        m_MainLayer.img_PowerBar:setPositionX(posX)
+        m_MainLayer.img_PowerBar:runAction(cc.MoveTo:create(0.5, cc.p(posX + childWidth, m_MainLayer.img_PowerBar:getPositionY())))
+    else
+        if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
+            return
+        end
+        local posX = 0 -(display.width - nodeWidth) / 2
+        if posX ~= m_MainLayer.img_PowerBar:getPositionX() then
+            m_MainLayer.img_PowerBar:setPositionX(posX - childWidth)
+            return
+        end
+        m_MainLayer.img_PowerBar:setPositionX(posX)
+        m_MainLayer.img_PowerBar:runAction(cc.MoveTo:create(0.5, cc.p(posX - childWidth, m_MainLayer.img_PowerBar:getPositionY())))
+    end
+end
+
+--  设置微调框的进场出场动画
+-- @ isEnabled 是否可以点击状态,动画状态
+-- @ m_MainLayer 游戏图层
+function BilliardsAniMgr:setFineTurningAni(isEnabled, m_MainLayer)
+    m_MainLayer.layout_FineTurning:stopAllActions()
+    local nodeWidth = m_MainLayer.node:getContentSize().width
+    local childWidth = m_MainLayer.layout_FineTurning:getContentSize().width
+    if isEnabled then
+        local posX = 1136 +(display.width - nodeWidth) / 2 + childWidth
+        if posX ~= m_MainLayer.layout_FineTurning:getPositionX() then
+            m_MainLayer.layout_FineTurning:setPositionX(posX - childWidth)
+            return
+        end
+        m_MainLayer.layout_FineTurning:setPositionX(posX)
+        m_MainLayer.layout_FineTurning:runAction(cc.MoveTo:create(0.5, cc.p(posX - childWidth, m_MainLayer.layout_FineTurning:getPositionY())))
+    else
+        if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
+            return
+        end
+        local posX = 1136 +(display.width - nodeWidth) / 2
+        if posX ~= m_MainLayer.layout_FineTurning:getPositionX() then
+            m_MainLayer.layout_FineTurning:setPositionX(posX + childWidth)
+            return
+        end
+        m_MainLayer.layout_FineTurning:setPositionX(posX)
+        m_MainLayer.layout_FineTurning:runAction(cc.MoveTo:create(0.5, cc.p(posX + childWidth, m_MainLayer.layout_FineTurning:getPositionY())))
+    end
+end
+
+-- 提示框信息
+function BilliardsAniMgr:setGameTips(m_MainLayer,result)
+    local currentUserID = EightBallGameManager:getCurrentUserID()
+    local panel_Tip = m_MainLayer.panel_Tip
+    if result == g_EightBallData.gameRound.foul then
+        if currentUserID ~= -1 and currentUserID == player:getPlayerUserID() then
+            m_MainLayer.tip:setString("击球犯规，请放置自由球")
+        elseif currentUserID ~= -1 and currentUserID ~= player:getPlayerUserID() then
+            m_MainLayer.tip:setString("击球犯规，对手放置自由球")
+        else
+            return
+        end
+    elseif result == g_EightBallData.gameRound.keep then
+        if (currentUserID ~= -1 and currentUserID ~= player:getPlayerUserID()) or EightBallGameManager:getColorUserID() <= 0 then
+            m_MainLayer.tip:setString("继续击球")
+        else
+            return
+        end
+    elseif result == g_EightBallData.gameRound.change then
+        m_MainLayer.tip:setString("正常击球，交换击球权")
+    elseif result == g_EightBallData.gameRound.restart then
+        m_MainLayer.tip:setString("首杆进黑八，重新开始本局")
+    else
+        m_MainLayer.tip:setString("")
+        panel_Tip:setPosition(cc.p(display.cx, 0 -(display.height - m_MainLayer.node:getContentSize().height) / 2))
+        return
+    end
+    local nodeHeight = m_MainLayer.node:getContentSize().height
+    local childHeight = panel_Tip:getContentSize().height
+    if panel_Tip then
+        panel_Tip:stopAllActions()
+        panel_Tip:setPosition(cc.p(display.cx, 0 -(display.height - nodeHeight) / 2))
+        panel_Tip:runAction(cc.Sequence:create(
+        cc.MoveTo:create(0.3, cc.p(display.cx, 0 -(display.height - nodeHeight) / 2 + childHeight)),
+        cc.DelayTime:create(1),
+        cc.CallFunc:create( function()
+            panel_Tip:runAction(cc.MoveTo:create(0.3, cc.p(display.cx, 0 -(display.height - nodeHeight) / 2)))
+        end )
+        ))
+    end
+end
+
+--桌子白色摆放球的指示框
+--@param isEnabled 是否需要亮出来
+function BilliardsAniMgr:setDeskTempAni(m_MainLayer, isEnabled)
+    m_MainLayer.deskTemp:stopAllActions()
+    m_MainLayer.deskTemp:setOpacity(0)
+    if isEnabled then
+        if EBGameControl:getGameState() == g_EightBallData.gameState.practise or EightBallGameManager:getCurrentUserID() == player:getPlayerUserID() then
+            m_MainLayer.deskTemp:setVisible(true)
+            m_MainLayer.deskTemp:runAction(cc.RepeatForever:create(cc.Sequence:create(cc.FadeIn:create(1), cc.FadeOut:create(1))))
+        else
+            m_MainLayer.deskTemp:setVisible(false)
+        end
+    else
+        m_MainLayer.deskTemp:setVisible(false)
+    end
 end
 
 function BilliardsAniMgr:init()

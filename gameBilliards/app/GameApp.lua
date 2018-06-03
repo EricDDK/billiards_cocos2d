@@ -4,9 +4,10 @@ local gamename = "gameBilliards"
 
 g_EightBallData = require("gameBilliards.app.define.EightBallDefine")
 
+--require("gameBilliards.app.mgr.ballManager")
 -- require("gameBilliards.app.define.GlobalDefine")  --测试Layer用
+
 require("gameBilliards.app.mgr.EightBallGameManager")
-require("gameBilliards.app.mgr.ballManager")
 require("gameBilliards.app.mgr.MathMgr")
 require("gameBilliards.app.mgr.BilliardsAnimationManager")
 require("gameBilliards.app.control.PhysicalControl")
@@ -16,11 +17,11 @@ function GameApp:ctor(...)
     GameApp.super.ctor(self, ...)
 end
 
-function GameApp:run()
+function GameApp:run(isResume)
     local pScene = cc.Scene:createWithPhysics()
     -- local layer = require(g_myGameName .. "/app/layer/testLayer").new()
     -- local layer = require(gamename .. "/app/layer/gameBilliardsMainLayer").new()
-    local layer = require(gamename .. "/app/layer/EightBallLayer").new()
+    local layer = require(gamename .. "/app/layer/EightBallLayer").new(isResume)
     if layer then
         pScene:addChild(layer)
     end

@@ -256,8 +256,9 @@ function mathMgr:checkBallLocationIsLegal(rootNode, pos, whiteBall)
     local distance = whiteBall:getContentSize().width
     local ballPosX, ballPosY
     if pos.x >(60 + radius) and pos.x <(913 - radius) and pos.y >(60 + radius) and pos.y <(489 - radius) then
+        local ball
         for i = 1, 15 do
-            local ball = desk:getChildByTag(i)
+            ball = desk:getChildByTag(i)
             if ball then
                 ballPosX, ballPosY = ball:getPosition()
                 if mathMgr.getDistancePow2(ballPosX, ballPosY, pos.x, pos.y) <= distance * distance then

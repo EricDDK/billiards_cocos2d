@@ -26,13 +26,13 @@ function Ball3DRender:ctor(nTag, rootBall)
     local rigidBody = cc.Physics3DRigidBody:create(rbDes)
     local component = cc.Physics3DComponent:create(rigidBody)
     self:setTexture("gameBilliards/3d_ball/" .. nTag .. ".png")
-    self:setTag(8)
+    self:setTag(g_EightBallData.g_Border_Tag.texture3D)
     self:setScale((rootBall:getContentSize().width / 2) / g_EightBallData.radius_3D)
     self:setCameraMask(cc.CameraFlag.USER2)
     self:setGlobalZOrder(0-nTag)
     --这里如果想要真实台球摆放位置，用random设置角度
-    self:setRotation3D(cc.vec3(0.0,0.0,0.0))
-    --self:setRotation3D(cc.vec3(math.random(0, 180), math.random(0, 180), math.random(0, 180)))
+    --self:setRotation3D(cc.vec3(0.0,0.0,0.0))
+    self:setRotation3D(cc.vec3(math.random(0, 180), math.random(0, 180), math.random(0, 180)))
     rigidBody:setAngularVelocity(cc.vec3(0.0, 0.0, 0.0))
 end
 

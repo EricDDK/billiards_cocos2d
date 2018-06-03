@@ -156,6 +156,7 @@ function Cue:receiveLauchBall(event, callback)
         if self and not tolua.isnull(self) and m_RootBall and not tolua.isnull(m_RootBall) then
             self:setCueLineCircleVisible(false)
             self:resetPos()
+            EightBallGameManager:setCanRefreshBallAni(true)
             m_RootBall:setPosition(cc.p(event.fPositionX, event.fPositionY))
             m_RootBall:getPhysicsBody():setVelocity(cc.p(event.fVelocityX, event.fVelocityY))
             m_RootBall:getPhysicsBody():setAngularVelocity(event.fAngularVelocity)
@@ -178,7 +179,7 @@ function Cue:receiveLauchBall(event, callback)
         local posX, posY = mathMgr:getCuePosByRotate(cueRotate, event.Percent)
         local radius = m_RootBall:getContentSize().width / 2
 
-        local func1 = cc.MoveTo:create(1, cc.p(radius + posX, radius + posY))
+        local func1 = cc.MoveTo:create(g_EightBallData.sendHitResultInterval, cc.p(radius + posX, radius + posY))
         local func2 = cc.CallFunc:create( function()
             _hitWhiteBall()
         end )
@@ -215,12 +216,11 @@ local mCanSendSetCueMessage = true
 --@ rootNode 游戏场景layer
 --@ isEnded 如果是触摸停止事件必然发送
 function Cue:sendSetCueMessage(angle, rootNode,isEnded)
-    if mCanSendSetCueMessage or isEnded then
+    if (mCanSendSetCueMessage or isEnded) and EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
         local requestData = {
             fAngle = tostring(angle),
             UserID = player:getPlayerUserID()
         }
-        dump(requestData)
         EBGameControl:requestEightBallCmd(g_EIGHTBALL_REG_SETCUEINFO,requestData)
         rootNode:runAction(cc.Sequence:create(cc.DelayTime:create(g_EightBallData.sendSetCueInterval), cc.CallFunc:create( function()
             mCanSendSetCueMessage = true

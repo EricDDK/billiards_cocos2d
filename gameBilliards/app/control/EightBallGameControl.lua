@@ -19,73 +19,32 @@ function EBGameControl:givePowerToWhiteBall(_forcePercent)
     end
 end
 
---  设置力量条的进场出场动画
---@ isEnabled 是否是可以点击状态,动画状态
-function EBGameControl:setSliderBarAni(isEnabled)
-    m_MainLayer.img_PowerBar:stopAllActions()
-    local nodeWidth = m_MainLayer.node:getContentSize().width
-    local childWidth = m_MainLayer.img_PowerBar:getContentSize().width
-    if isEnabled then
-        local posX = 0 -(display.width - nodeWidth) / 2 - childWidth
-        if posX ~= m_MainLayer.img_PowerBar:getPositionX() then
-            return
-        end
-        m_MainLayer.img_PowerBar:setPositionX(posX)
-        m_MainLayer.img_PowerBar:runAction(cc.MoveTo:create(0.5, cc.p(posX + childWidth, m_MainLayer.img_PowerBar:getPositionY())))
-    else
-        if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
-            return
-        end
-        local posX = 0 -(display.width - nodeWidth) / 2
-        if posX ~= m_MainLayer.img_PowerBar:getPositionX() then
-            return
-        end
-        m_MainLayer.img_PowerBar:setPositionX(posX)
-        m_MainLayer.img_PowerBar:runAction(cc.MoveTo:create(0.5, cc.p(posX - childWidth, m_MainLayer.img_PowerBar:getPositionY())))
-    end
-end
-
---  设置微调框的进场出场动画
---@ isEnabled 是否可以点击状态,动画状态
-function EBGameControl:setFineTurningAni(isEnabled)
-    m_MainLayer.layout_FineTurning:stopAllActions()
-    local nodeWidth = m_MainLayer.node:getContentSize().width
-    local childWidth = m_MainLayer.layout_FineTurning:getContentSize().width
-    if isEnabled then
-        local posX = 1136 +(display.width - nodeWidth) / 2 + childWidth
-        if posX ~= m_MainLayer.layout_FineTurning:getPositionX() then
-            return
-        end
-        m_MainLayer.layout_FineTurning:setPositionX(posX)
-        m_MainLayer.layout_FineTurning:runAction(cc.MoveTo:create(0.5, cc.p(posX - childWidth, m_MainLayer.layout_FineTurning:getPositionY())))
-    else
-        if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
-            return
-        end
-        local posX = 1136 +(display.width - nodeWidth) / 2
-        if posX ~= m_MainLayer.layout_FineTurning:getPositionX() then
-            return
-        end
-        m_MainLayer.layout_FineTurning:setPositionX(posX)
-        m_MainLayer.layout_FineTurning:runAction(cc.MoveTo:create(0.5, cc.p(posX + childWidth, m_MainLayer.layout_FineTurning:getPositionY())))
-    end
-end
-
 --比赛开始了
 function EBGameControl:startGame(rootNode)
     PhyControl:resetAllBallsPos(rootNode)
     rootNode.cue:setRotationOwn(0,rootNode)
     if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
-        EBGameControl:setSliderBarAni(true)
-        EBGameControl:setFineTurningAni(true)
+        BilliardsAniMgr:setSliderBarAni(true,m_MainLayer)
+        BilliardsAniMgr:setFineTurningAni(true,m_MainLayer)
+        BilliardsAniMgr:setDeskTempAni(m_MainLayer,true)  --桌子白板
     end
+    ----------------------------------------------------------------------------------
+   -- --测试
+   -- for i=1,5 do
+   --     rootNode.desk:getChildByTag(i):setPosition(cc.p(1500,1500))
+   -- end
+   -- rootNode.desk:getChildByTag(6):setPosition(cc.p(100,100))
+   -- rootNode.desk:getChildByTag(7):setPosition(cc.p(800,100))
+   -- rootNode.desk:getChildByTag(8):setPosition(cc.p(450,100))
+    ----------------------------------------------------------------------------------
 end
 
---处理白球进洞
+--处理白球进洞,放回原始位置
 function EBGameControl:dealWhiteBallInHole()
     print("EBGameControl:dealWhiteBallInHole()====")
     m_MainLayer.whiteBall:resetForceAndEffect()
     m_MainLayer.whiteBall:resetBallState()
+    m_MainLayer.whiteBall:setBallState(g_EightBallData.ballState.stop)
     local pos = cc.p(270, m_MainLayer.desk:getContentSize().height / 2)
     while true do
         if not mathMgr:checkBallLocationIsLegal(m_MainLayer, pos, m_MainLayer.whiteBall) then
@@ -95,56 +54,148 @@ function EBGameControl:dealWhiteBallInHole()
         end
     end
     m_MainLayer.whiteBall:setPosition(pos)
-    m_MainLayer.whiteBall:dealWhiteBallInHole()
+    m_MainLayer.whiteBall:dealWhiteBallInHole(m_MainLayer)
+end
+
+-- 获取各色球是否都进洞了
+--@param nType = 1 全色球 nType = 2 半色球 3 所有球
+function EBGameControl:getIsBallAllInHole(nType)
+    local ball
+    local isAllInHole = false
+    if nType == 1 then
+        for i=1,7 do
+            ball = m_MainLayer.desk:getChildByTag(i)
+            if ball then
+                if not ball:getIsInHole() then
+                    return false
+                end
+            end
+        end
+        return true
+    elseif nType == 2 then
+        for i=9,15 do
+            ball = m_MainLayer.desk:getChildByTag(i)
+            if ball then
+                if not ball:getIsInHole() then
+                    return false
+                end
+            end
+        end
+        return true
+    end
+    return false
+end
+
+--获取所有球是否停止
+function EBGameControl:getIsBallAllStop()
+    local ball
+    for i = 1, 15 do
+        ball = m_MainLayer.desk:getChildByTag(i)
+        if ball then
+            if not ball:checkIsStop() then
+                return false
+            end
+        end
+    end
+    return true
+end
+
+--设置所有球的标记函数为run
+--击打球的时候调用,优化性能
+function EBGameControl:setAllBallsRun()
+    local ball
+    for i=0,15 do
+        ball = m_MainLayer.desk:getChildByTag(i)
+        if ball:getBallState() ~= g_EightBallData.ballState.inHole then
+            ball:setBallState(g_EightBallData.ballState.run)
+        end
+    end
+end
+
+--处理断线重连,只是同步一下所有信息
+function EBGameControl:dealGameResume(event)
+    local array = { }
+    array.RountCount = event.RoundCount
+    array.UserID = event.CurrentUserID
+    array.FullColorUserID = event.FullColorBallUserID
+    array.HalfColorUserID = event.HalfColorBallUserID
+    array.Result = event.GameState
+    array.LinkCount = event.LinkCount
+    array.BallInfoArray = event.Balls
+    EightBallGameManager:clearBallsProcess()
+    EightBallGameManager:setBallsResultPos(array)
+    EBGameControl:setGameState(g_EightBallData.gameState.none)
+    EightBallGameManager:syncHitResult(m_MainLayer, true)
+    m_MainLayer.whiteBall:setPosition(cc.p(GetPreciseDecimal(event.Balls[1].fPositionX), GetPreciseDecimal(event.Balls[1].fPositionY)))
+    m_MainLayer.whiteBall:setRotationOwn(event.WhiteBallRotation)
+    BilliardsAniMgr:setDeskTempAni(m_MainLayer, false)
+    if m_MainLayer.whiteBall:getIsInHole() then
+        EBGameControl:dealWhiteBallInHole()
+    end
+    m_MainLayer.cue:setRotationOwn(0,m_MainLayer)
+    EightBallGameManager:setCanRefreshBallAni(true)
 end
 
 --球落袋了
 function EBGameControl:ballInHole(nTag, nNode)
-    print(nTag .. " num ball is in hole")
+    print(nTag .. " num ball is in hole",m_MainLayer.desk:getChildByTag(0):getBallState())
     EightBallGameManager:dealInHoleToServer(nTag)
     local ball = m_MainLayer.desk:getChildByTag(nTag)
     if ball and nNode then
-        ball:ballGoInHole(nTag)--球进洞(设置一下ballState)
+        ball:setBallState(g_EightBallData.ballState.inHole,m_MainLayer)
+        -- 球进洞(设置一下ballState)
         local ballPosX, ballPosY = ball:getPosition()
         local nodePosX, nodePosY = nNode:getPosition()
-        --ball:runAction(cc.Sequence:create(cc.DelayTime:create(0), cc.CallFunc:create( function()
-            ball:getPhysicsBody():resetForces()
-            ball:getPhysicsBody():setVelocity(cc.p(0, 0))
-            ball:getPhysicsBody():setAngularVelocity(0)
-            local sprite3d = ball:getChildByTag(8)
+        ball:getPhysicsBody():resetForces()
+        ball:getPhysicsBody():setVelocity(cc.p(0, 0))
+        ball:getPhysicsBody():setAngularVelocity(0)
+        local sprite3d = ball:getChildByTag(g_EightBallData.g_Border_Tag.texture3D)
+        if sprite3D and sprite3D:getPhysicsObj() then
+            sprite3D:getPhysicsObj():setAngularVelocity(cc.vec3(0.0, 0.0, 0.0))
+        end
+        -- 取消碰撞
+        ball:getPhysicsBody():setCategoryBitmask(0x04)
+        ball:getPhysicsBody():setContactTestBitmask(0x04)
+        ball:getPhysicsBody():setCollisionBitmask(0x04)
+
+        ball:runAction(cc.Spawn:create(cc.MoveTo:create(0.5, cc.p(nodePosX, nodePosY)), cc.ScaleTo:create(0.5, 0.7), cc.CallFunc:create( function()
             if sprite3D and sprite3D:getPhysicsObj() then
-                sprite3D:getPhysicsObj():setAngularVelocity(cc.vec3(0.0, 0.0, 0.0))
+                sprite3D:getPhysicsObj():setAngularVelocity(cc.vec3(-(nodePosY - ballPosY) / g_EightBallData.ballRollingRate / 20,(nodePosX - ballPosX) / g_EightBallData.ballRollingRate / 20, 0.0))
             end
+        end )))
 
-            --取消碰撞
-            ball:getPhysicsBody():setCategoryBitmask(0x04)
-            ball:getPhysicsBody():setContactTestBitmask(0x04)
-            ball:getPhysicsBody():setCollisionBitmask(0x04)
+        ball:runAction(cc.Sequence:create(cc.DelayTime:create(0.5), cc.CallFunc:create( function()
+            if ball and not tolua.isnull(ball) then
+                ball:resetBallState()
+                ball:setPosition(cc.p(1500, 1500))
+                --ball:setBallState(g_EightBallData.ballState.inHole)
 
-            ball:runAction(cc.Spawn:create(cc.MoveTo:create(0.5, cc.p(nodePosX, nodePosY)), cc.ScaleTo:create(0.5, 0.7), cc.CallFunc:create( function()
-                if sprite3D and sprite3D:getPhysicsObj() then
-                    sprite3D:getPhysicsObj():setAngularVelocity(cc.vec3(-(nodePosY - ballPosY) / g_EightBallData.ballRollingRate / 20,(nodePosX - ballPosX) / g_EightBallData.ballRollingRate / 20, 0.0))
-                end
-            end )))
-            ball:runAction(cc.Sequence:create(cc.DelayTime:create(0.5), cc.CallFunc:create( function()
-                if ball and not tolua.isnull(ball) then
-                    ball:resetBallState()
-                    ball:setPosition(cc.p(1500,1500))
+                -- 碰撞最后加上
+                ball:getPhysicsBody():setCategoryBitmask(0x01)
+                ball:getPhysicsBody():setContactTestBitmask(0x01)
+                ball:getPhysicsBody():setCollisionBitmask(0x03)
 
-                    --碰撞最后加上
-                    ball:getPhysicsBody():setCategoryBitmask(0x01)
-                    ball:getPhysicsBody():setContactTestBitmask(0x01)
-                    ball:getPhysicsBody():setCollisionBitmask(0x03)
+                if ball:getTag() == 0 then
+                    print("white ball in hole animation is done",ball:getIsInHole())
 
-                    if ball:getTag() == 0 then
-                        print("white ball in hole animation is done")
-                        --EBGameControl:dealWhiteBallInHole()--处理白球落袋
-                    elseif ball:getTag() == 8 then
-                        tool.openNetTips("黑八进啦，比赛结束了傻逼")
+                    if ball:getIsInHole() then
+                        if EightBallGameManager:getIsSyncHitResult() and EBGameControl:getIsBallAllStop() and m_MainLayer:isTimeEnteryStop() then
+                            EBGameControl:dealWhiteBallInHole()  -- 处理白球落袋
+                        end
                     end
+
+                -- EBGameControl:dealWhiteBallInHole()--处理白球落袋
+                elseif ball:getTag() == 8 then
+                    tool.openNetTips("黑八进啦，比赛结束了")
                 end
+            end
+        end )))
+
+        if nTag > 0 and nTag <= 15 then
+            ball:runAction(cc.Sequence:create(cc.DelayTime:create(1), cc.CallFunc:create( function()
+                ball:dealBallInBag()
             end )))
-        --end )))
+        end
     end
 end
 
@@ -163,6 +214,11 @@ function EBGameControl:initCheckCollisionListener(root)
             EightBallGameManager:playEffectByTag(tagA,tagB,velocity) --播放音效
 
             EightBallGameManager:dealCollisionToServer(tagA,tagB)
+
+            if nodeA and nodeB and tagA <= 15 and tagB <= 15 and tagA > 0 and tagB > 0 and
+            nodeA:getBallState() == g_EightBallData.ballState.inHole and nodeB:getBallState() == g_EightBallData.ballState.inHole then
+                PhyControl:dealInHoleBallCollision(nodeA,nodeB,m_MainLayer.desk)
+            end
 
             if tagA == g_EightBallData.g_Border_Tag.whiteBall or tagB == g_EightBallData.g_Border_Tag.whiteBall then
                 m_MainLayer:runAction(cc.Sequence:create(cc.DelayTime:create(0.3), cc.CallFunc:create( function()
@@ -371,7 +427,8 @@ function EBGameControl:onTouchBegan(touch, event)
 
     if EBGameControl:getGameState() == g_EightBallData.gameState.practise or 
     EBGameControl:getGameState() == g_EightBallData.gameState.waiting or 
-    EBGameControl:getGameState() == g_EightBallData.gameState.setWhite then
+    EBGameControl:getGameState() == g_EightBallData.gameState.setWhite or
+    EBGameControl:getGameState() == g_EightBallData.gameState.restart then
         local whiteBallRect = m_MainLayer.whiteBall:getBoundingBox()
         local curPos = m_MainLayer.desk:convertToNodeSpace(touch:getLocation())
         if cc.rectContainsPoint(whiteBallRect, cc.p(curPos.x, curPos.y)) then
@@ -404,7 +461,8 @@ function EBGameControl:onTouchEnded(touch, event)
 
     if EBGameControl:getGameState() == g_EightBallData.gameState.practise or 
     EBGameControl:getGameState() == g_EightBallData.gameState.waiting or 
-    EBGameControl:getGameState() == g_EightBallData.gameState.setWhite then
+    EBGameControl:getGameState() == g_EightBallData.gameState.setWhite or
+    EBGameControl:getGameState() == g_EightBallData.gameState.restart then
         -- 白球
         if isTouchWhiteBall then
             local _pos = m_MainLayer.desk:convertToNodeSpace(touch:getLocation())
@@ -421,6 +479,7 @@ function EBGameControl:onTouchEnded(touch, event)
                 if mathMgr:checkBallLocationIsLegal(m_MainLayer,_pos,m_MainLayer.whiteBall) then
                     m_MainLayer.whiteBall:setPositionY(_pos.y)
                     m_MainLayer.whiteBall:sendSetWhiteBallMessage(_pos.x,_pos.y,m_MainLayer,true)
+                    BilliardsAniMgr:setDeskTempAni(m_MainLayer,false)  --桌子白板
                 end
                 m_MainLayer.whiteBall:getPhysicsBody():setCategoryBitmask(0x01)
                 m_MainLayer.whiteBall:getPhysicsBody():setContactTestBitmask(0x01)
@@ -430,6 +489,7 @@ function EBGameControl:onTouchEnded(touch, event)
 
             if not mathMgr:checkBallLocationIsOut(m_MainLayer,_pos,m_MainLayer.whiteBall) then
                 m_MainLayer.whiteBall:setPosition(cc.p(_pos.x, _pos.y))
+                BilliardsAniMgr:setDeskTempAni(m_MainLayer,false)  --桌子白板
             end
             m_MainLayer.whiteBall:whiteBallTouchEnded(m_MainLayer, _pos, false, isLimitPos)
             return true
@@ -466,7 +526,8 @@ function EBGameControl:onTouchMoved(touch, event)
     
     if EBGameControl:getGameState() == g_EightBallData.gameState.practise or 
     EBGameControl:getGameState() == g_EightBallData.gameState.waiting or 
-    EBGameControl:getGameState() == g_EightBallData.gameState.setWhite then
+    EBGameControl:getGameState() == g_EightBallData.gameState.setWhite or
+    EBGameControl:getGameState() == g_EightBallData.gameState.restart then
         if isTouchWhiteBall then
             local _pos = m_MainLayer.desk:convertToNodeSpace(touch:getLocation())
 

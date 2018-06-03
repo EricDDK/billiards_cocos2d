@@ -75,7 +75,9 @@ EightBallDefine.sendSetWhiteBallInterval                = 0.5  --发送重置白
 
 EightBallDefine.sendSetCueInterval                      = 0.5  --发送重置杆子位置消息间隔
 
-EightBallDefine.sendHitResultInterval                   = 1  --发送击球结果消息间隔
+EightBallDefine.sendHitResultInterval                   = 0.5  --发送击球结果消息间隔
+
+EightBallDefine.receiveHitWhiteBall                     = 0.5  --收到击球信息后击打延迟
 
 ----------------------------------------------------------------------------------------------------------
 
@@ -87,6 +89,16 @@ EightBallDefine.ballPhysicsMaterial                     = cc.PhysicsMaterial(bal
 EightBallDefine.whilteBallPhysicsMaterial               = cc.PhysicsMaterial(ballDensity, ballRestiution, whiteBallFiction)
 
 ----------------------------------------------------------------------------------------------------------
+
+EightBallDefine.inBagPos                                = cc.p(-15, 487)
+
+EightBallDefine.HitColor = {
+    notMy               = -1,       --不是我的回合
+    none                = 0,        --初始
+    full                = 1,        --该打全色
+    half                = 2,        --该打花色
+    black               = 3,        --该打黑球
+}
 
 EightBallDefine.word = {
     your                = 1,        --该你击球
@@ -146,6 +158,8 @@ EightBallDefine.g_Border_Tag = {
     fourteen            = 14,
     fifteen             = 15,
 
+    texture3D           = 8,
+
     whiteShadow         = 20,
     forbidden           = 21,
     moveHand            = 22,
@@ -153,6 +167,7 @@ EightBallDefine.g_Border_Tag = {
 
     border              = 100,
     hole                = 200,
+    bagBorder           = 225,
     cueCheck            = 250,
     lineCheck           = 300,
     circleCheck         = 350,

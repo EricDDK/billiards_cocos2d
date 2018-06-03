@@ -112,7 +112,7 @@ function gamebilliardsWhiteBallLayer:onTouchMoved(touch)
 --            end
 --            print("rotate",rotate)
         else
-        self.redPoint:setPosition(self.ball_white:convertToNodeSpace(touch:getLocation()))
+            self.redPoint:setPosition(self.ball_white:convertToNodeSpace(touch:getLocation()))
         end
     end
 end
