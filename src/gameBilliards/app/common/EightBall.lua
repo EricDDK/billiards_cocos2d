@@ -47,6 +47,7 @@ end
 
 -- 球停止运动
 function EightBall:resetForceAndEffect()
+    self:getPhysicsBody():resetForces()
     self:getPhysicsBody():setVelocity(cc.p(0, 0))
     self:getPhysicsBody():setAngularVelocity(0)
     self:clearWhiteBallContinuesForce()
@@ -130,6 +131,7 @@ function EightBall:ctor(nTag)
     self:getPhysicsBody():setContactTestBitmask(0x01)
     self:getPhysicsBody():setCollisionBitmask(0x03)
     self:loadEffect()
+    self:setPosition(cc.p(nTag*40+1500,1500))
     self:setBallState(g_EightBallData.ballState.stop)
     self:set3DRender(nTag)  --加载3D shader球面
     --self:setRotation(90)  --测试用
@@ -168,7 +170,12 @@ end
 
 -- 加载光影特效
 function EightBall:loadEffect()
-    local highLight = ccui.ImageView:create("gameBilliards/eightBall/eightBall_Ball_HighLight.png", UI_TEX_TYPE_LOCAL)
+    local highLight
+    if self:getTag() == 0 then
+        highLight = ccui.ImageView:create("gameBilliards/eightBall/eightBall_Ball_HighLight.png", UI_TEX_TYPE_LOCAL)
+    else
+        highLight = ccui.ImageView:create("gameBilliards/eightBall/eightBall_Ball_HighLight.png", UI_TEX_TYPE_LOCAL)
+    end
     highLight:setCascadeOpacityEnabled(false)
     highLight:setAnchorPoint(cc.p(0.5, 0.5))
     highLight:setScale(0.6)
@@ -212,6 +219,9 @@ function EightBall:loadTipsEffect()
 end
 
 function EightBall:startTipsEffect()
+    if self.mBallState == g_EightBallData.ballState.inHole then
+        return
+    end
     local action1 = cc.ScaleTo:create(1, 1.3)
     local action2 = cc.ScaleTo:create(1, 0.5)
     local action = cc.RepeatForever:create(cc.Sequence:create(action1, action2))
@@ -378,9 +388,10 @@ function EightBall:setBallsResultState(event,rootNode)
     if self:getTag() == 0 then
         local rotate = GetPreciseDecimal(event.fAngularVelocity)
         self:setRotationOwn(rotate)
-        print("EightBall setBallsResultState  whiteBall rotation = ",rotate)
     end
     self:setPosition(cc.p(posX,posY))
+    self:getPhysicsBody():resetForces()
+    self:getPhysicsBody():setVelocity(cc.p(0, 0))
 end
 
 --  获取球停止后的信息，在获取击球结果时使用
@@ -395,7 +406,6 @@ function EightBall:getBallsResultState()
             _positionY = 1500
         end
         angularVelocity = self:getRotation()
-        print("EightBall:getBallsResultState() white ball rotation = ",angularVelocity)
     end
     --保留小数点后5位
     return {
@@ -420,6 +430,7 @@ function EightBall:setWhiteBallContinuesForce(event)
     whiteBallContinuesForce = event
 end
 
+--持续力保存
 function EightBall:getWhiteBallContinuesForce()
     return whiteBallContinuesForce
 end

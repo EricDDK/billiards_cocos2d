@@ -21,15 +21,15 @@ function Cue:ctor(_root)
     spriteTag:setVisible(false)
     self:addChild(spriteTag)
     --路径检测直线精灵
-    local spriteLine = ccui.Scale9Sprite:create("gameBilliards/eightBall/eightBall_DrawLine.png")
-    spriteLine:setAnchorPoint(cc.p(0,0.5))
-    spriteLine:setCapInsets(cc.rect(1,1,spriteLine:getContentSize().width-2,spriteLine:getContentSize().height-2))
-    spriteLine:setScale9Enabled(true)
-    spriteLine:setContentSize(cc.size(1000,spriteLine:getContentSize().height))
+    self.spriteLine = ccui.Scale9Sprite:create("gameBilliards/eightBall/eightBall_DrawLine.png")
+    self.spriteLine:setAnchorPoint(cc.p(0,0.5))
+    self.spriteLine:setCapInsets(cc.rect(1,1,self.spriteLine:getContentSize().width-2,self.spriteLine:getContentSize().height-2))
+    self.spriteLine:setScale9Enabled(true)
+    self.spriteLine:setContentSize(cc.size(1000,self.spriteLine:getContentSize().height))
     local pos = m_RootBall:getContentSize().width/2
-    spriteLine:setPosition(pos,pos)
-    spriteLine:setTag(g_EightBallData.g_Border_Tag.lineCheck)
-    m_RootBall:addChild(spriteLine)
+    self.spriteLine:setPosition(pos,pos)
+    self.spriteLine:setTag(g_EightBallData.g_Border_Tag.lineCheck)
+    m_RootBall:addChild(self.spriteLine)
 
     local _borderWidth = 1136
     local _borderHeight = m_RootBall:getContentSize().width/2
@@ -39,31 +39,31 @@ function Cue:ctor(_root)
     local _colorLine
     if g_EightBallData.isDebug then _colorLine = cc.c4f(0,0,0,0) else _colorLine = cc.c4f(0,0,0,0) end
     cueCheckBorder:drawRect(cc.p(-_borderWidth/2,-_borderHeight),cc.p(_borderWidth/2,_borderHeight),_colorLine)
-    cueCheckBorder:setPosition(cc.p(_borderWidth/2,spriteLine:getContentSize().height/2))
-    spriteLine:addChild(cueCheckBorder)
+    cueCheckBorder:setPosition(cc.p(_borderWidth/2,self.spriteLine:getContentSize().height/2))
+    self.spriteLine:addChild(cueCheckBorder)
 
-    local circleCheck = cc.Sprite:create("gameBilliards/eightBall/eightBall_DrawCircle.png")
-    circleCheck:setTag(g_EightBallData.g_Border_Tag.circleCheck)
-    circleCheck:setPosition(0,spriteLine:getContentSize().height/2)
-    circleCheck:setVisible(false)
-    spriteLine:addChild(circleCheck)
+    self.circleCheck = cc.Sprite:create("gameBilliards/eightBall/eightBall_DrawCircle.png")
+    self.circleCheck:setTag(g_EightBallData.g_Border_Tag.circleCheck)
+    self.circleCheck:setPosition(0,self.spriteLine:getContentSize().height/2)
+    self.circleCheck:setVisible(false)
+    self.spriteLine:addChild(self.circleCheck)
 
-    local CircleShadow = cc.Sprite:create("gameBilliards/eightBall/eightBall_DrawCircle_Shadow.png")
-    CircleShadow:setTag(g_EightBallData.g_Border_Tag.circleShadow)
-    CircleShadow:setPosition(cc.p(pos,pos))
-    circleCheck:addChild(CircleShadow)
+    self.CircleShadow = cc.Sprite:create("gameBilliards/eightBall/eightBall_DrawCircle_Shadow.png")
+    self.CircleShadow:setTag(g_EightBallData.g_Border_Tag.circleShadow)
+    self.CircleShadow:setPosition(cc.p(pos,pos))
+    self.circleCheck:addChild(self.CircleShadow)
 
     -------------------------------------------------------------
     self:setGlobalZOrder(1000)
     self:setCameraMask(cc.CameraFlag.USER2)
-    --spriteLine:setGlobalZOrder(1000)  --测试用
-    --spriteLine:setCameraMask(cc.CameraFlag.USER2)
+    --self.spriteLine:setGlobalZOrder(1000)  --测试用
+    --self.spriteLine:setCameraMask(cc.CameraFlag.USER2)
     cueCheckBorder:setGlobalZOrder(1000)  --测试用
     cueCheckBorder:setCameraMask(cc.CameraFlag.USER2)
-    circleCheck:setGlobalZOrder(1000)  --测试用
-    circleCheck:setCameraMask(cc.CameraFlag.USER2)
-    CircleShadow:setGlobalZOrder(1000)  --测试用
-    CircleShadow:setCameraMask(cc.CameraFlag.USER2)
+    self.circleCheck:setGlobalZOrder(1000)  --测试用
+    self.circleCheck:setCameraMask(cc.CameraFlag.USER2)
+    self.CircleShadow:setGlobalZOrder(1000)  --测试用
+    self.CircleShadow:setCameraMask(cc.CameraFlag.USER2)
     -------------------------------------------------------------
 
     mCanSendSetCueMessage = true  --重置成员函数
@@ -71,12 +71,10 @@ end
 
 function Cue:setCircleByLegal(isLegal)
     if not isLegal then
-        m_RootBall:getChildByTag(g_EightBallData.g_Border_Tag.lineCheck):getChildByTag(g_EightBallData.g_Border_Tag.circleCheck)
-        :getChildByTag(g_EightBallData.g_Border_Tag.circleShadow):setTexture("gameBilliards/eightBall/eightBall_DrawCircle_Red.png")
+        self.CircleShadow:setTexture("gameBilliards/eightBall/eightBall_DrawCircle_Red.png")
         return
     end
-    m_RootBall:getChildByTag(g_EightBallData.g_Border_Tag.lineCheck):getChildByTag(g_EightBallData.g_Border_Tag.circleCheck)
-    :getChildByTag(g_EightBallData.g_Border_Tag.circleShadow):setTexture("gameBilliards/eightBall/eightBall_DrawCircle_Shadow.png")
+    self.CircleShadow:setTexture("gameBilliards/eightBall/eightBall_DrawCircle_Shadow.png")
 end
 
 --重置杆前后位置
@@ -187,13 +185,31 @@ function Cue:receiveLauchBall(event, callback)
     end
 end
 
+--接受消息，移动杆子的处理
+function Cue:receriveSetCueInfo(rotate, rootNode)
+    self:stopAllActions()
+
+    if EightBallGameManager:getCurrentUserID() ~= player:getPlayerUserID() and EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
+        self.spriteLine:setVisible(false)
+        self.circleCheck:setVisible(false)
+    else
+        self.spriteLine:setVisible(true)
+        self.circleCheck:setVisible(true)
+    end
+
+    self:runAction(cc.Sequence:create(
+    cc.RotateTo:create(0.5, rotate),
+    cc.CallFunc:create( function()
+        self:setRotationOwn(rotate, rootNode)
+    end )))
+end
+
 --设置角度
 --@rotate 旋转的角度
 function Cue:setRotationOwn(rotate,rootNode)
     self:setRotation(rotate)
-    local lineCheck = m_RootBall:getChildByTag(g_EightBallData.g_Border_Tag.lineCheck)
-    if lineCheck then
-        lineCheck:setRotation(rotate)
+    if self.spriteLine then
+        self.spriteLine:setRotation(rotate)
     end
     PhyControl:drawRouteDetection(rotate,self,m_RootBall,rootNode)
 end
@@ -202,9 +218,8 @@ end
 -- 是否看得见瞄准线，圆球线，路径检测线
 -- isVisible bool 是否看得见
 function Cue:setCueLineCircleVisible(isVisible)
-    local lineCheck = m_RootBall:getChildByTag(g_EightBallData.g_Border_Tag.lineCheck)
-    if lineCheck then
-        lineCheck:setVisible(isVisible)
+    if self.spriteLine then
+        self.spriteLine:setVisible(isVisible)
     end
     self:setVisible(isVisible)
     self:setCircleByLegal(true)

@@ -41,10 +41,10 @@ function PhyControl:initEightBallPhysicalBorder(_root)
 end
 
 --创建所有的球
-function PhyControl:initEightBallAllBalls(_root)
+function PhyControl:initEightBallAllBalls(_root,isResume)
     local desk = _root.desk
     PhyControl:createWhiteBall(desk)
-    PhyControl:createEightBallAllBalls(desk)
+    PhyControl:createEightBallAllBalls(desk,isResume)
 end
 
 --创建杆子
@@ -152,7 +152,8 @@ local ballPosIndex = {
 }
 
 -- 八球初始化所有的彩色球
-function PhyControl:createEightBallAllBalls(desk)
+function PhyControl:createEightBallAllBalls(desk,isResume)
+    print("createEightBallAllBalls ",debug.traceback())
     local dir = cc.p(650,desk:getContentSize().height / 2)
     local diameter = g_EightBallData.radius*2+2
     local ballPos = dir
@@ -165,7 +166,11 @@ function PhyControl:createEightBallAllBalls(desk)
         for j=1,i do
             ballPos.y = ballPos.y + diameter
             local ball = require("gameBilliards/app/common/EightBall").new(ballPosIndex[curNumber].index)
-            ball:setPosition(ballPos)
+            if isResume then
+                ball:setPosition(cc.p(curNumber*40 + 100,1500))
+            else
+                ball:setPosition(ballPos)
+            end
             desk:addChild(ball)
             curNumber = curNumber + 1
             if j == i then
@@ -205,6 +210,7 @@ function PhyControl:resetAllBallsPos(rootNode)
             local ball = desk:getChildByTag(ballPosIndex[curNumber].index)
             ball:setPosition(ballPos)
             ball:setRotationOwn(0)
+            ball:setBallState(g_EightBallData.ballState.stop)
             curNumber = curNumber + 1
             if j == i then
                 ballPos.y = curColY+ (diameter)/2  --末尾放置
@@ -287,7 +293,7 @@ function PhyControl:drawRouteDetection(rotate, cue, whiteBall, mainLayer)
 
         -- 1是默认值，白圈判定
         if EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
-            local myColor = EightBallGameManager:getMyColor(mainLayer)
+            local myColor = EightBallGameManager:getMyColor()
             if myColor == g_EightBallData.HitColor.black and _tmpCollisionBall[1].tag == 8 then
                 cue:setCircleByLegal(true)
             elseif ( _tmpCollisionBall[1].tag >= 8 and myColor == g_EightBallData.HitColor.full) 

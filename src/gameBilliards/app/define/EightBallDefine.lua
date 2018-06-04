@@ -79,6 +79,8 @@ EightBallDefine.sendHitResultInterval                   = 0.5  --发送击球结
 
 EightBallDefine.receiveHitWhiteBall                     = 0.5  --收到击球信息后击打延迟
 
+EightBallDefine.operateTimer                            = 20   --定时器间隔
+
 ----------------------------------------------------------------------------------------------------------
 
 --@边界刚体属性
@@ -159,6 +161,7 @@ EightBallDefine.g_Border_Tag = {
     fifteen             = 15,
 
     texture3D           = 8,
+    timer               = 9,
 
     whiteShadow         = 20,
     forbidden           = 21,

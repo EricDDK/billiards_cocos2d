@@ -21,6 +21,7 @@ end
 
 --比赛开始了
 function EBGameControl:startGame(rootNode)
+    print("start game in eightball game control ",debug.traceback())
     PhyControl:resetAllBallsPos(rootNode)
     rootNode.cue:setRotationOwn(0,rootNode)
     if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
@@ -29,13 +30,13 @@ function EBGameControl:startGame(rootNode)
         BilliardsAniMgr:setDeskTempAni(m_MainLayer,true)  --桌子白板
     end
     ----------------------------------------------------------------------------------
-   -- --测试
-   -- for i=1,5 do
-   --     rootNode.desk:getChildByTag(i):setPosition(cc.p(1500,1500))
-   -- end
-   -- rootNode.desk:getChildByTag(6):setPosition(cc.p(100,100))
-   -- rootNode.desk:getChildByTag(7):setPosition(cc.p(800,100))
-   -- rootNode.desk:getChildByTag(8):setPosition(cc.p(450,100))
+--   --测试
+--   for i=1,5 do
+--       rootNode.desk:getChildByTag(i):setPosition(cc.p(1500,1500))
+--   end
+--   rootNode.desk:getChildByTag(6):setPosition(cc.p(100,100))
+--   rootNode.desk:getChildByTag(7):setPosition(cc.p(800,100))
+--   rootNode.desk:getChildByTag(8):setPosition(cc.p(450,100))
     ----------------------------------------------------------------------------------
 end
 
@@ -133,7 +134,13 @@ function EBGameControl:dealGameResume(event)
         EBGameControl:dealWhiteBallInHole()
     end
     m_MainLayer.cue:setRotationOwn(0,m_MainLayer)
-    EightBallGameManager:setCanRefreshBallAni(true)
+    EightBallGameManager:setCanRefreshBallAni(true)  --设置可以刷新球3D特效
+    
+    --定时器条
+    local progressTimer1 = player:getPlayerUserID() == event.CurrentUserID and m_MainLayer.profressTimer1 or m_MainLayer.profressTimer2
+    local progressTimer2 = player:getPlayerUserID() == event.CurrentUserID and m_MainLayer.profressTimer2 or m_MainLayer.profressTimer1
+    BilliardsAniMgr:setHeadTimerAni(progressTimer1,event.LeftTime,nil)
+    BilliardsAniMgr:setHeadTimerAni(progressTimer2,0,nil)
 end
 
 --球落袋了
@@ -192,6 +199,7 @@ function EBGameControl:ballInHole(nTag, nNode)
         end )))
 
         if nTag > 0 and nTag <= 15 then
+            print("dealBallInBag",debug.traceback())
             ball:runAction(cc.Sequence:create(cc.DelayTime:create(1), cc.CallFunc:create( function()
                 ball:dealBallInBag()
             end )))
@@ -208,6 +216,7 @@ function EBGameControl:initCheckCollisionListener(root)
             local nodeB = contact:getShapeB():getBody():getNode()
             local tagA = nodeA:getTag()
             local tagB = nodeB:getTag()
+            _print("collision tags are ",tagA,tagB)
             local velocityA = math.abs(nodeA:getPhysicsBody():getVelocity().x) + math.abs(nodeA:getPhysicsBody():getVelocity().y)
             local velocityB = math.abs(nodeB:getPhysicsBody():getVelocity().x) + math.abs(nodeB:getPhysicsBody():getVelocity().y)
             local velocity = velocityA + velocityB

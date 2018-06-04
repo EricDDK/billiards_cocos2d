@@ -6,7 +6,10 @@ end
 
 --通用方法，保留小数位后数字
 function GetPreciseDecimal(num)
-    return num - num % 0.00001
+    if num then
+        return num - num % 0.00001
+    end
+    return 0
 end
 
 function mathMgr:getAngular(args)

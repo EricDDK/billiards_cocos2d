@@ -174,7 +174,7 @@ function BilliardsAniMgr:setSliderBarAni(isEnabled, m_MainLayer)
     end
 end
 
---  设置微调框的进场出场动画
+-- 设置微调框的进场出场动画
 -- @ isEnabled 是否可以点击状态,动画状态
 -- @ m_MainLayer 游戏图层
 function BilliardsAniMgr:setFineTurningAni(isEnabled, m_MainLayer)
@@ -259,6 +259,53 @@ function BilliardsAniMgr:setDeskTempAni(m_MainLayer, isEnabled)
         end
     else
         m_MainLayer.deskTemp:setVisible(false)
+    end
+end
+
+-- 设置头像框的倒计时
+function BilliardsAniMgr:setHeadTimerAni(Bg, leftTime, callback)
+    if EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
+        local ProgressTimerAction = Bg:getChildByTag(g_EightBallData.g_Border_Tag.timer)
+        if not ProgressTimerAction then
+            local sprite = cc.Sprite:create("gameBilliards/eightBall/eightBall_TimeProgress.png")
+            ProgressTimerAction = cc.ProgressTimer:create(sprite)
+            ProgressTimerAction:setType(cc.PROGRESS_TIMER_TYPE_RADIAL)
+            ProgressTimerAction:setPosition(cc.p(Bg:getContentSize().width / 2, Bg:getContentSize().height / 2))
+            ProgressTimerAction:setAnchorPoint(cc.p(0.5, 0.5))
+            ProgressTimerAction:setReverseDirection(false)
+            ProgressTimerAction:setTag(g_EightBallData.g_Border_Tag.timer)
+            Bg:addChild(ProgressTimerAction)
+        end
+
+        if leftTime <= 0 then
+            ProgressTimerAction:setPercentage(0)
+            ProgressTimerAction:stopAllActions()
+            return
+        end
+
+        local wholeTime = leftTime * 5
+        if leftTime > 20 then
+            wholeTime = 100
+        end
+        local progressTo = cc.ProgressFromTo:create(leftTime, wholeTime, 0)
+        local clear = cc.CallFunc:create( function()
+            if callback then
+                callback()
+            end
+        end )
+
+        ProgressTimerAction:runAction(cc.Sequence:create(progressTo, clear))
+    end
+end
+
+--指示球设置
+function BilliardsAniMgr:setTipBallsAni(root,tipBalls,index,pos)
+    if root then
+        local tip = tipBalls[index]
+        if tip then
+            root:addChild(tip)
+            tip:setPositionX()
+        end
     end
 end
 

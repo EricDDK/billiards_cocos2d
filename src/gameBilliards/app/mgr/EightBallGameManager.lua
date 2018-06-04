@@ -84,6 +84,7 @@ function EightBallGameManager:dealCollisionToServer(tagA,tagB)
             local anotherTag = (tagA == g_EightBallData.g_Border_Tag.whiteBall and tagB or tagA )
             if anotherTag <= 15 and anotherTag >= 1 then
                 hitBallsProcessArray.firstCollisionIndex = anotherTag
+                print("deal Collision To Server the first collison index = ",anotherTag)
                 return
             end
         end
@@ -167,15 +168,15 @@ local switch = {
 }
 -- 同步一下结果，所有球位置修正
 --@ rootNode 游戏主layer
-function EightBallGameManager:syncHitResult(rootNode,isResume)
+function EightBallGameManager:syncHitResult(rootNode, isResume)
     if isSyncHitResult and not isResume then
         return
     end
     if not isResume then
         isSyncHitResult = true
     end
-    --白球进洞处理
-    print("EightBallGameManager:syncHitResult ",EBGameControl:getGameState(),ballsResultArray.UserID)
+    -- 白球进洞处理
+    print("EightBallGameManager:syncHitResult ", EBGameControl:getGameState(), ballsResultArray.UserID)
     if rootNode.whiteBall:getIsInHole() then
         print("whiteball is in hall !! ")
         EBGameControl:dealWhiteBallInHole()
@@ -184,83 +185,88 @@ function EightBallGameManager:syncHitResult(rootNode,isResume)
     -- 练习模式不走同步击球结果
     -- 如果ballsResultArray.UserID不存在就说明消息还没回来，这时候需要return出来等待消息回来主动调用此函数
     -- userid是空也代表存在异常，解决了击打者击打完会出现杆子0.5秒再消失的bug
-    if EBGameControl:getGameState() == g_EightBallData.gameState.practise 
-    or not next(ballsResultArray) or not ballsResultArray.UserID then 
+    if EBGameControl:getGameState() == g_EightBallData.gameState.practise
+        or not next(ballsResultArray) or not ballsResultArray.UserID then
         return
     end
-    
+
     EightBallGameManager:setCurrentUserID(ballsResultArray.UserID)
-    print("this round hit ball userid = ",ballsResultArray.UserID)
+    print("this round hit ball userid = ", ballsResultArray.UserID)
     if ballsResultArray.UserID == player:getPlayerUserID() then
-        --我的回合
+        -- 我的回合
         rootNode.slider_PowerBar:setTouchEnabled(true)
-        BilliardsAniMgr:setSliderBarAni(true,rootNode)
-        BilliardsAniMgr:setFineTurningAni(true,rootNode)
+        BilliardsAniMgr:setSliderBarAni(true, rootNode)
+        BilliardsAniMgr:setFineTurningAni(true, rootNode)
     else
-        --对方回合，我等
+        -- 对方回合，我等
         rootNode.slider_PowerBar:setTouchEnabled(false)
-        BilliardsAniMgr:setSliderBarAni(false,rootNode)
-        BilliardsAniMgr:setFineTurningAni(false,rootNode)
+        BilliardsAniMgr:setSliderBarAni(false, rootNode)
+        BilliardsAniMgr:setFineTurningAni(false, rootNode)
     end
-    --设置我的击球颜色
-    EightBallGameManager:setColorUserID(ballsResultArray.FullColorUserID,ballsResultArray.HalfColorUserID,rootNode)
-    --result获取比赛当前状态
+    -- 设置我的击球颜色
+    EightBallGameManager:setColorUserID(ballsResultArray.FullColorUserID, ballsResultArray.HalfColorUserID, rootNode)
+    -- result获取比赛当前状态
     local func = switch[ballsResultArray.Result]
     if func then
         func()
     end
-    
-    BilliardsAniMgr:setGameTips(rootNode,ballsResultArray.Result)  --黑色提示框
-    EightBallGameManager:setCanOperate(true) --可以操作了
 
-    --首杆黑八进洞，重新摆放球开始比赛
+    BilliardsAniMgr:setGameTips(rootNode, ballsResultArray.Result)
+    -- 黑色提示框
+    EightBallGameManager:setCanOperate(true)
+    -- 可以操作了
+
+    -- 首杆黑八进洞，重新摆放球开始比赛
     if ballsResultArray.Result == g_EightBallData.gameRound.restart then
         EBGameControl:startGame(rootNode)
         if player:getPlayerUserID() == EightBallGameManager:getCurrentUserID() then
             rootNode.whiteBall:dealWhiteBallInHole()
         end
         return
-    --换你击球动画
+        -- 换你击球动画
     elseif (ballsResultArray.Result == g_EightBallData.gameRound.change or ballsResultArray.Result == g_EightBallData.gameRound.foul)
-    and player:getPlayerUserID() == mCurrentUserID then
-        BilliardsAniMgr:createWordEffect(rootNode, g_EightBallData.word.your)--换你击球文字动画
+        and player:getPlayerUserID() == mCurrentUserID then
+        BilliardsAniMgr:createWordEffect(rootNode, g_EightBallData.word.your)
+        -- 换你击球文字动画
     end
 
-    --显示连杆动画
+    -- 显示连杆动画
     if ballsResultArray.LinkCount and ballsResultArray.LinkCount > 1 then
-        BilliardsAniMgr:createLinkEffect(rootNode,ballsResultArray.LinkCount)
+        BilliardsAniMgr:createLinkEffect(rootNode, ballsResultArray.LinkCount)
     end
 
     -- 结束同步最后同步一下结果函数
     if ballsResultArray and next(ballsResultArray) then
         local ballsArray = ballsResultArray.BallInfoArray
         local ball
-        for i = 1, 15 do
+        for i = 0, 15 do
             ball = rootNode.desk:getChildByTag(i)
             if ball then
-                ball:setBallsResultState(ballsArray[i + 1],rootNode)
-                --断线重连后要同步球状态
+                ball:setBallsResultState(ballsArray[i + 1], rootNode)
+                -- 断线重连后要同步球状态
                 if isResume then
-                    ball:setIsInHoleByPos(ballsArray[i + 1].fPositionX,ballsArray[i + 1].fPositionY)
+                    ball:setIsInHoleByPos(ballsArray[i + 1].fPositionX, ballsArray[i + 1].fPositionY)
                 end
             end
         end
     end
-    --白球进洞或者击打犯规，处理白球进洞流程，单一入口
+
+    -- 白球进洞或者击打犯规，处理白球进洞流程，单一入口
     if rootNode.whiteBall:getIsInHole() or ballsResultArray.Result == g_EightBallData.gameRound.foul then
         EBGameControl:dealWhiteBallInHole()
     end
 
-    rootNode.cue:setRotationOwn(0,rootNode) --击球结束同步一下结果
+    rootNode.cue:setRotationOwn(0, rootNode)
+    -- 击球结束同步一下结果
     rootNode.cue:setCueLineCircleVisible(true)
-    rootNode.cue:setRotationOwn(0,rootNode)
+    rootNode.cue:setRotationOwn(0, rootNode)
 
-    --球体底层提示框架（这里是三目，当前轮需要是我）
-    --value = 1 打全色  || value = 2 打半色
+    -- 球体底层提示框架（这里是三目，当前轮需要是我）
+    -- value = 1 打全色  || value = 2 打半色
     local value =(mFullColorUserID == player:getPlayerUserID() and mCurrentUserID == player:getPlayerUserID()) and 1
     or((mHalfColorUserID == player:getPlayerUserID() and mCurrentUserID == player:getPlayerUserID()) and 9 or 0)
     if value == 1 or value == 9 then
-        for i=value,value + 6 do
+        for i = value, value + 6 do
             local ball = rootNode.desk:getChildByTag(i)
             if ball then
                 ball:startTipsEffect()
@@ -309,7 +315,7 @@ function EightBallGameManager:getColorUserID()
 end
 
 --获取我的颜色，1是全色，2是半色，3是全打完了该打黑色球了
-function EightBallGameManager:getMyColor(rootNode)
+function EightBallGameManager:getMyColor()
     local myColor = g_EightBallData.HitColor.none
     --还没判断好谁打全色球谁打半色球,或者不是我的轮次，自动白色圈圈
     if mFullColorUserID == -1 or mHalfColorUserID == -1 or mCurrentUserID ~= player:getPlayerUserID() then
