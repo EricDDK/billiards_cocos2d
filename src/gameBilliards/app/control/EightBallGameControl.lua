@@ -21,7 +21,7 @@ end
 
 --比赛开始了
 function EBGameControl:startGame(rootNode)
-    print("start game in eightball game control ",debug.traceback())
+    print("start game in eightball game control ")
     PhyControl:resetAllBallsPos(rootNode)
     rootNode.cue:setRotationOwn(0,rootNode)
     if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
@@ -38,6 +38,11 @@ function EBGameControl:startGame(rootNode)
 --   rootNode.desk:getChildByTag(7):setPosition(cc.p(800,100))
 --   rootNode.desk:getChildByTag(8):setPosition(cc.p(450,100))
     ----------------------------------------------------------------------------------
+end
+
+--退出游戏处理
+function EBGameControl:leaveGame()
+    os.exit()
 end
 
 --处理白球进洞,放回原始位置
@@ -199,10 +204,69 @@ function EBGameControl:ballInHole(nTag, nNode)
         end )))
 
         if nTag > 0 and nTag <= 15 then
-            print("dealBallInBag",debug.traceback())
             ball:runAction(cc.Sequence:create(cc.DelayTime:create(1), cc.CallFunc:create( function()
                 ball:dealBallInBag()
             end )))
+        end
+    end
+end
+
+-- 处理指示球
+function EBGameControl:dealTipBalls()
+    if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
+        return
+    end
+    local full, half = EightBallGameManager:getColorUserID()
+    local myColor =(full ~= -1 and half ~= -1) and(full == player:getPlayerUserID() and 1 or 2) or -1
+    local tipBall
+    local ball
+
+    local function newBalls(root, rootPos, index)
+        tipBall = ccui.ImageView:create("gameBilliards/eightBall/ball_" .. index .. ".png", UI_TEX_TYPE_LOCAL)
+        tipBall:setScale(0.6)
+        tipBall:setTag(index)
+        root:addChild(tipBall)
+        tipBall:setPosition(cc.p(rootPos:getPositionX() +(index < 8 and(index - 1) or(index - 9)) * 43.1, rootPos:getPositionY()))
+    end
+
+    local function checkVisible(pTipBall, index)
+        ball = m_MainLayer.desk:getChildByTag(index)
+        if ball and ball:getBallState() == g_EightBallData.ballState.inHole then
+            pTipBall:setVisible(false)
+        else
+            pTipBall:setVisible(true)
+        end
+    end
+
+    if myColor == 1 then
+        for i = 1, 7 do
+            tipBall = m_MainLayer.img_User1:getChildByTag(i)
+            if not tipBall then
+                newBalls(m_MainLayer.img_User1, m_MainLayer.tipBall1, i)
+            end
+            checkVisible(tipBall, i)
+        end
+        for i = 9, 15 do
+            tipBall = m_MainLayer.img_User2:getChildByTag(i)
+            if not tipBall then
+                newBalls(m_MainLayer.img_User2, m_MainLayer.tipBall2, i)
+            end
+            checkVisible(tipBall, i)
+        end
+    elseif myColor == 2 then
+        for i = 1, 7 do
+            tipBall = m_MainLayer.img_User2:getChildByTag(i)
+            if not tipBall then
+                newBalls(m_MainLayer.img_User2, m_MainLayer.tipBall2, i)
+            end
+            checkVisible(tipBall, i)
+        end
+        for i = 9, 15 do
+            tipBall = m_MainLayer.img_User1:getChildByTag(i)
+            if not tipBall then
+                newBalls(m_MainLayer.img_User1, m_MainLayer.tipBall1, i)
+            end
+            checkVisible(tipBall, i)
         end
     end
 end
@@ -216,7 +280,7 @@ function EBGameControl:initCheckCollisionListener(root)
             local nodeB = contact:getShapeB():getBody():getNode()
             local tagA = nodeA:getTag()
             local tagB = nodeB:getTag()
-            _print("collision tags are ",tagA,tagB)
+            --_print("collision tags are ",tagA,tagB)
             local velocityA = math.abs(nodeA:getPhysicsBody():getVelocity().x) + math.abs(nodeA:getPhysicsBody():getVelocity().y)
             local velocityB = math.abs(nodeB:getPhysicsBody():getVelocity().x) + math.abs(nodeB:getPhysicsBody():getVelocity().y)
             local velocity = velocityA + velocityB
@@ -299,6 +363,80 @@ function EBGameControl:removMoveeWhiteBallListener()
     if m_MainLayer.eventDispatcher then
         m_MainLayer.eventDispatcher:removeEventListener(m_MainLayer.listenerWhiteBallMove)
         m_MainLayer.eventDispatcher = nil
+    end
+end
+
+--击球结束后设置正确的求位置
+function EBGameControl:setSuitCuePos()
+    if EBGameControl:getGameState() == g_EightBallData.gameState.practise and EightBallGameManager:getCurrentUserID() == player:getPlayerUserID() then
+        m_MainLayer.cue:setRotationOwn(0, m_MainLayer)
+    else
+        local whiteBall = m_MainLayer.whiteBall
+        m_MainLayer.cue:setRotationOwn(0, m_MainLayer)
+        local ball
+        local suitBallDistance
+        local suitBallIndex
+        local myColor = EightBallGameManager:getMyColor()
+        local suitBallArray = { }
+
+        local function getSuitBallIndex(i)
+            ball = m_MainLayer.desk:getChildByTag(i)
+            if ball and ball:getBallState() ~= g_EightBallData.ballState.inHole then
+                local _dis = mathMgr.getDistancePow2(whiteBall:getPositionX(), whiteBall:getPositionY(), ball:getPositionX(), ball:getPositionY())
+                if suitBallDistance then
+                    if suitBallDistance > _dis then
+                        suitBallDistance = _dis
+                        suitBallIndex = i
+                    end
+                else
+                    suitBallDistance = _dis
+                    suitBallIndex = i
+                end
+            end
+        end
+
+        local function setSuitBall()
+            local suitBall = m_MainLayer.desk:getChildByTag(suitBallIndex)
+            local pos = cc.p(suitBall:getPositionX(), suitBall:getPositionY())
+            if m_MainLayer and m_MainLayer.whiteBall and not tolua.isnull(m_MainLayer.whiteBall) and m_MainLayer.whiteBall.getPosition then
+                ballX, ballY = m_MainLayer.whiteBall:getPosition()
+            else
+                return
+            end
+            local rotate = mathMgr:getAngularByTouchPosAndBallPos(pos, ballX, ballY)
+            rotate = GetPreciseDecimal(rotate)
+            m_MainLayer.cue:setRotationOwn(rotate - m_MainLayer.whiteBall:getRotation(), m_MainLayer)
+            --这里考虑不发送
+            m_MainLayer.cue:sendSetCueMessage(rotate - m_MainLayer.whiteBall:getRotation(), m_MainLayer, true)
+        end
+
+        ---------------------------------------------------------
+        ---- 测试代码
+        -- myColor = 1
+        ---------------------------------------------------------
+
+        if myColor == 1 then
+            for i = 1, 7 do
+                getSuitBallIndex(i)
+            end
+            setSuitBall()
+            return
+        elseif myColor == 2 then
+            for i = 9, 15 do
+                getSuitBallIndex(i)
+            end
+            setSuitBall()
+            return
+        elseif myColor == 3 then
+            ball = m_MainLayer:getChildByTag(8)
+            if ball and ball:getBallState() ~= g_EightBallData.ballState.inHole then
+                suitBallIndex = 8
+                setSuitBall()
+                return
+            end
+        else
+
+        end
     end
 end
 
@@ -420,6 +558,11 @@ end
 local curFineTurningPosY = 0  -- 当前微调框走到哪里了，是否需要重置位置
 local isTouchWhiteBall = false --是否触摸开始时触摸到了白球
 function EBGameControl:onTouchBegan(touch, event)
+    if m_MainLayer:getIsSettingNode() then
+        m_MainLayer:openSettingNode()
+        print("===================")
+        return false
+    end
     --定时器在跑，result消息没收到，不是我的轮次，none和gameover的state不可以响应触摸
     if m_MainLayer:getTimeEntryIsRunning() or not EightBallGameManager:returnIsMyOperate() or EBGameControl:getGameState() == g_EightBallData.gameState.none 
     or EBGameControl:getGameState() == g_EightBallData.gameState.gameOver or not EightBallGameManager:getCanOperate() then

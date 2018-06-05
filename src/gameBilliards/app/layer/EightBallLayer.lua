@@ -11,6 +11,9 @@ local nImg_UpBall                   = 118       -- 拉杆球
 local nImg_UpBallRedPoint           = 119       -- 拉杆球红点
 local nText_VS                      = 120       -- 比分文字信息(1:5)
 local nBtn_Setting                  = 121       -- 设置界面
+local nPanel_Setting                = 130       --设置黑框
+local nBtn_Back                     = 131       --退出按钮
+local nBtn_Set                      = 132       --设置按钮
 
 local nSlider_PowerBar              = 21        -- 力量条
 local nScroll_PowerCue              = 22        -- 力量杆裁剪容器
@@ -77,6 +80,7 @@ function EightBallLayer:initView(isResume)
             self.img_User2 = panel_Users:getChildByTag(nImg_User2)
             self.userBall1 = self.img_User1:getChildByName("_Ball")
             self.userBall2 = self.img_User2:getChildByName("_Ball")
+            self.userBall1:setVisible(false)  self.userBall2:setVisible(false)
             self.userHead1 = self.img_User1:getChildByName("_Head")
             self.userHead2 = self.img_User2:getChildByName("_Head")
             self.profressTimer1 = self.img_User1:getChildByName("progressTimer_1")
@@ -118,15 +122,25 @@ function EightBallLayer:initView(isResume)
         self.btn_reset = self.node:getChildByTag(64)
         self.btn_reset:addTouchEventListener(btnCallback)
 
+        self.panel_setting = self.node:getChildByTag(nPanel_Setting)
+        if self.panel_setting then
+            for i=nBtn_Back,nBtn_Set do
+                local btn = self.panel_setting:getChildByTag(i)
+                if btn then
+                    btn:addTouchEventListener(btnCallback)
+                end
+            end
+        end
+        
         self:initPhysicalInfo(isResume)
-        self:initTipBalls()
         self:initListener()
         self:adaptationLayer()
 
         print("init view isResume = ",isResume)
         if not isResume then
-            EBGameControl:startGame(self)--测试用
+            EBGameControl:startGame(self)
         end
+        --EBGameControl:startGame(self)--测试用
     end
 end
 
@@ -187,6 +201,7 @@ function EightBallLayer:receiveLeaveTable(event)
     if event.tableID == player:getMyTableID() then
         if event.seatID == player:getMySeatID() and event.userID == player:getPlayerUserID() then
             print("you leave the table ")
+            EBGameControl:leaveGame()
         else
             local playerInfo = dmgr:getPlayerInfoByTableIdAndSeatIdInTable(event.tableID, event.seatID)
             if playerInfo then
@@ -200,7 +215,14 @@ function EightBallLayer:receiveLeaveTable(event)
 end
 
 function EightBallLayer:receiveGameReady(event)
-    print("EightBallLayer:receiveGameReady", event.userID ,event.tableID,event.seatID)
+    print("EightBallLayer:receiveGameReady", event.userID, event.tableID, event.seatID)
+    if event.userID == player:getPlayerUserID() then
+        local _Lay = display.getRunningScene():getChildByTag(2000)
+        if _Lay then
+            --tool.closeLayerAni(_Lay.node,_Lay)
+            _Lay:removeFromParent()
+        end
+    end
     self:showOriginRolePanel()
 end
 
@@ -343,15 +365,15 @@ function EightBallLayer:receiveGameOver(event)
     print("EightBallLayer:receiveGameOver")
     dump(event)
     EBGameControl:setGameState(g_EightBallData.gameState.gameOver)
-
+    display.getRunningScene():addChild(require("gameBilliards.app.layer.EightBallGameOverLayer").new(event))
     -- 测试
     -----------------------------------------------------------------------------
-    local _key = G_PlayerInfoList:keyFind(player:getPlayerUserID())
-    local requestData = {
-        tableID = G_PlayerInfoList[_key].TableID,
-        seatID = G_PlayerInfoList[_key].SeatID,
-    }
-    ClientNetManager.getInstance():requestCmd(g_Room_REQ_GAMEREADY, requestData, G_ProtocolType.Room)
+--    local _key = G_PlayerInfoList:keyFind(player:getPlayerUserID())
+--    local requestData = {
+--        tableID = G_PlayerInfoList[_key].TableID,
+--        seatID = G_PlayerInfoList[_key].SeatID,
+--    }
+--    ClientNetManager.getInstance():requestCmd(g_Room_REQ_GAMEREADY, requestData, G_ProtocolType.Room)
     -----------------------------------------------------------------------------
 
 end
@@ -398,75 +420,6 @@ function EightBallLayer:initPhysicalInfo(isResume)
     self.cue = PhyControl:initCue(self.whiteBall)
     self.routeLine = self.cue:getChildByTag(g_EightBallData.g_Border_Tag.lineCheck)
     self.cue:setRotationOwn(0,self)
-end
-
-local mTipBalls = {}
---初始化球
-function EightBallLayer:initTipBalls()
-    local ball
-    for i=1,15 do
-        ball = ccui.ImageView:create("gameBilliards/eightBall/ball_"..i..".png",UI_TEX_TYPE_LOCAL)
-        ball:setTag(i)
-        ball:setScale(0.6)
-        ball:setPosition(cc.p(1500,1500))
-        mTipBalls[i] = ball
-    end
-end
-
-function EightBallLayer:newTipBalls()
-    if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
-        return
-    end
-    local full,half = EightBallGameManager:getColorUserID()
-    local myColor = (full ~= -1 and half ~= -1) and (full == player:getPlayerUserID() and full or half) or -1
-    print("new tips balls ",myColor)
-    if myColor == 1 then
-        for i=1,7 do
-            if self.img_User1:getChildByTag(i) then
-                self.img_User1:addChild(mTipBalls[i])
-                mTipBalls[i]:setPosition(cc.p(self.tipBall1:getPositionX() +(i - 1) * 43.1, self.tipBall1:getPositionY()))
-            end
-        end
-        for i=9,15 do
-            if self.img_User2:getChildByTag(i) then
-                self.img_User2:addChild(mTipBalls[i])
-                mTipBalls[i]:setPosition(cc.p(self.tipBall1:getPositionX() +(i - 9) * 43.1, self.tipBall1:getPositionY()))
-            end
-        end
-    elseif myColor == 2 then
-        for i=1,7 do
-            if self.img_User2:getChildByTag(i) then
-                self.img_User2:addChild(mTipBalls[i])
-                mTipBalls[i]:setPosition(cc.p(self.tipBall1:getPositionX() +(i - 1) * 43.1, self.tipBall1:getPositionY()))
-            end
-        end
-        for i=9,15 do
-            if self.img_User1:getChildByTag(i) then
-                self.img_User1:addChild(mTipBalls[i])
-                mTipBalls[i]:setPosition(cc.p(self.tipBall1:getPositionX() +(i - 9) * 43.1, self.tipBall1:getPositionY()))
-            end
-        end
-    end
---    local myColor = EightBallGameManager:getMyColor()
---    if myColor == 1 then
---        for i=1,7 do
---            if self.img_User1:getChildByTag(i) then
---                self.img_User1:addChild(mTipBalls[i])
---                mTipBalls[i]:setPosition(cc.p(self.tipBall1:getPositionX() +(i - 1) * 43.1, self.tipBall1:getPositionY()))
---            end
---        end
---    elseif myColor == 2 then
---        for i=9,15 do
---            if self.img_User2:getChildByTag(i) then
---            self.img_User2:addChild(mTipBalls[i])
---            mTipBalls[i]:setPosition(cc.p(self.tipBall1:getPositionX() +(i - 9) * 43.1, self.tipBall1:getPositionY()))
---            end
---        end
---    end
-end
-
-function EightBallLayer:dealTipBall()
-    
 end
 
 --创建监听
@@ -568,6 +521,11 @@ function EightBallLayer:btnCallback(sender, eventType)
             self:openWhiteBallLayer()
         elseif nTag == nBtn_Setting then
             self:openSettingNode()
+        elseif nTag == nBtn_Back then
+            self:goBack()
+        elseif nTag == nBtn_Set then
+            self:openSettingLayer()
+            self:openSettingNode()
         end
     elseif eventType == TOUCH_EVENT_MOVED then
         
@@ -579,7 +537,8 @@ end
 local test = 1
 --测试用的重置界面按钮事件
 function EightBallLayer:resetBalls()
-    self:newTipBalls()
+    self:receiveGameOver(nil)
+    --EBGameControl:setSuitCuePos()
     --BilliardsAniMgr:setHeadTimerAni(self.profressTimer1,20,nil)
     -- if 1==1 then
     --     local ball = self.desk:getChildByTag(test)
@@ -616,16 +575,72 @@ function EightBallLayer:openWhiteBallLayer()
     end
 end
 
+local mIsSettingNode = false  --处理设置界面
+function EightBallLayer:getIsSettingNode() return mIsSettingNode end
 --放下设置界面
 function EightBallLayer:openSettingNode()
-    
+    local posX = self.panel_setting:getPositionX()
+    local posY = self.panel_setting:getPositionY()
+    local height = self.panel_setting:getContentSize().height
+    if not mIsSettingNode then
+        print("setting ben pos = ", posX, posY, height)
+        local func1 = cc.MoveTo:create(0.15, cc.p(posX, posY - height - 30))
+        local func2 = cc.MoveTo:create(0.03, cc.p(posX, posY - height + 10))
+        local func3 = cc.MoveTo:create(0.02, cc.p(posX, posY - height))
+        self.panel_setting:runAction(cc.Sequence:create(func1, func2, func3))
+        mIsSettingNode = true
+    else
+        self.panel_setting:runAction(cc.MoveTo:create(0.15, cc.p(posX, posY + height)))
+        mIsSettingNode = false
+    end
+end
+
+--返回大厅
+function EightBallLayer:goBack()
+    if EBGameControl:getGameState() == g_EightBallData.gameState.practise or EBGameControl:getGameState() == g_EightBallData.gameState.gameOver then
+        EBGameControl:leaveGame()
+    else
+        rmgr:setIsChangeGamePlayer(false)
+        local _key = G_PlayerInfoList:keyFind(player:getPlayerUserID())
+        local requestData = {
+            tableID = G_PlayerInfoList[_key].TableID,
+            seatID = G_PlayerInfoList[_key].SeatID,
+        }
+        ClientNetManager.getInstance():requestCmd(g_Room_REQ_LEAVETABLE, requestData, G_ProtocolType.Room)
+        self:runAction(cc.Sequence:create(cc.DelayTime:create(4), cc.CallFunc:create( function()
+            print("initiative exit room ")
+            EBGameControl:leaveGame()
+        end )))
+    end
+end
+
+--打开设置界面
+function EightBallLayer:openSettingLayer()
+    display.getRunningScene():addChild(require("gameBilliards.app.layer.EightBallSettingLayer").new())
 end
 
 --游戏重新开始
 function EightBallLayer:restart()
     EightBallGameManager:initialize()  --初始化一些游戏step成员变量
+    self:resetHeadFrame()
     self:closeSyncBallTimeEnter()
     self:closeCheckStopTimeEntry()
+end
+
+--头像框重置
+function EightBallLayer:resetHeadFrame()
+    for j=1,2 do
+        local headFrame = self.node:getChildByTag(nPanel_Users):getChildByTag(nImg_User1+j-1)
+        if headFrame then
+            for i=1,15 do
+                local ballTip = headFrame:getChildByTag(i)
+                if ballTip then
+                    ballTip:setVisible(false)
+                end
+            end
+            
+        end
+    end
 end
 
 --适配
@@ -633,11 +648,12 @@ function EightBallLayer:adaptationLayer()
     self.img_PowerBar:setPositionX(self.img_PowerBar:getPositionX() -(display.width - self.node:getContentSize().width) / 2 - self.img_PowerBar:getContentSize().width)
     self.layout_FineTurning:setPositionX(self.layout_FineTurning:getPositionX() +(display.width - self.node:getContentSize().width) / 2 + self.layout_FineTurning:getContentSize().width)
     self.panel_Tip:setPosition(cc.p(display.cx, 0 -(display.height - self.node:getContentSize().height) / 2))
---    if (display.width / display.height) < 1136 / 640 then
+    self.panel_setting:setPosition(cc.p( 0-(display.width - self.node:getContentSize().width) / 2 , display.height + (display.height - self.node:getContentSize().height) / 2))
+    --    if (display.width / display.height) < 1136 / 640 then
 
---    elseif (display.width / display.height) >= 1136 / 640 then
+    --    elseif (display.width / display.height) >= 1136 / 640 then
 
---    end
+    --    end
 end
 
 ---------------------------------------------------  ↑  UI  ↑  --------------------------------------------------------------------

@@ -19,6 +19,11 @@ end
 
 function GameApp:run(isResume)
     local pScene = cc.Scene:createWithPhysics()
+    local loading = require(gamename .. "/app/layer/BilliardsLoadingLayer").new()
+    if loading then
+        pScene:addChild(loading)
+    end
+
     -- local layer = require(g_myGameName .. "/app/layer/testLayer").new()
     -- local layer = require(gamename .. "/app/layer/gameBilliardsMainLayer").new()
     local layer = require(gamename .. "/app/layer/EightBallLayer").new(isResume)
@@ -35,6 +40,8 @@ function GameApp:run(isResume)
     if device.platform ~= "windows" then
         amgr.playMusic("gameBilliards/sound/Billiards_Bg_2.mp3", true)
     end
+
+    
 
 end
 

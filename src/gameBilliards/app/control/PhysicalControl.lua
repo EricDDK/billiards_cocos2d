@@ -153,7 +153,6 @@ local ballPosIndex = {
 
 -- 八球初始化所有的彩色球
 function PhyControl:createEightBallAllBalls(desk,isResume)
-    print("createEightBallAllBalls ",debug.traceback())
     local dir = cc.p(650,desk:getContentSize().height / 2)
     local diameter = g_EightBallData.radius*2+2
     local ballPos = dir
@@ -189,6 +188,7 @@ function PhyControl:resetAllBallsPos(rootNode)
         if ball then
             ball:resetForceAndEffect()
             ball:resetBallState()
+            ball:setVisible(true)
             ball:setBallState(g_EightBallData.ballState.stop)
         end
     end
@@ -264,7 +264,7 @@ function PhyControl:drawRouteDetection(rotate, cue, whiteBall, mainLayer)
             local ballPosX, ballPosY = _ball:getPosition()
             local json = mathMgr.getNewRx_Ry(_rectPos.x, _rectPos.y, ballPosX, ballPosY, rotate)
             if mathMgr.computeCollision(1136,_ball:getContentSize().width,_ball:getContentSize().width/2,json.newRx,json.newRy) then
-                local _ballDistance = help.twoDistance(_whitePos.x,_whitePos.y,ballPosX,ballPosY)
+                local _ballDistance = mathMgr.twoDistance(_whitePos.x,_whitePos.y,ballPosX,ballPosY)
                 if ballPosX >= 0 then
                     table.insert(_tmpCollisionBall, { tag = i, distance = _ballDistance })
                 end

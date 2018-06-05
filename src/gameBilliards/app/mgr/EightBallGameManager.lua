@@ -4,7 +4,6 @@ local mCurrentUserID                    = -1    -- 当前可操作userid
 local mFullColorUserID                  = -1    -- 击打全色球的userid
 local mHalfColorUserID                  = -1    -- 击打半色球的userid
 
-
 --获取是不是我击球
 function EightBallGameManager:returnIsMyOperate()
     --如果是练习模式，就是我
@@ -246,6 +245,7 @@ function EightBallGameManager:syncHitResult(rootNode, isResume)
                 -- 断线重连后要同步球状态
                 if isResume then
                     ball:setIsInHoleByPos(ballsArray[i + 1].fPositionX, ballsArray[i + 1].fPositionY)
+                    ball:setVisible(true)
                 end
             end
         end
@@ -260,6 +260,8 @@ function EightBallGameManager:syncHitResult(rootNode, isResume)
     -- 击球结束同步一下结果
     rootNode.cue:setCueLineCircleVisible(true)
     rootNode.cue:setRotationOwn(0, rootNode)
+    EBGameControl:dealTipBalls()  --处理头像框指示球
+    EBGameControl:setSuitCuePos()  --设置合适的杆位置
 
     -- 球体底层提示框架（这里是三目，当前轮需要是我）
     -- value = 1 打全色  || value = 2 打半色
@@ -273,7 +275,6 @@ function EightBallGameManager:syncHitResult(rootNode, isResume)
             end
         end
     end
-
     ballsResultArray = { }
 end
 
@@ -290,10 +291,6 @@ end
 
 function EightBallGameManager:getHitWhiteResult()
     return hitWhiteBallResult
-end
-
-function EightBallGameManager:init()
-    
 end
 
 --是否打全色球
@@ -398,7 +395,6 @@ function EightBallGameManager:initialize()
     mCanRefreshBallAni = false
 end
 
-
 local effectSwitch = {
     [g_EightBallData.sound.ball] = function ()
         return "gameBilliards/sound/BallHit.wav"
@@ -452,6 +448,10 @@ function EightBallGameManager:playEffectByTag(tagA,tagB,velocity)
             EightBallGameManager:playEffect(g_EightBallData.sound.pocket)
         end
     end
+end
+
+function EightBallGameManager:init()
+    --mCanPlayMusic,mCanPlayEffect,mCanViberate = amgr.getMusicAndEffectEnable()
 end
 
 return EightBallGameManager

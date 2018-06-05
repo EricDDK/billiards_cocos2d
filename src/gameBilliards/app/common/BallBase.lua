@@ -3,7 +3,7 @@
 -- 二次封装,易错函数
 -- author ding
 --
-local BallBase = class("BallBase", function() return cc.Sprite:create() end)
+local BallBase = class("BallBase", function() return cc.Sprite:createWithSpriteFrameName("eightBall_TransparentBall.png") end)
 
 function BallBase:init()
 

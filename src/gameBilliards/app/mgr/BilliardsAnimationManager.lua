@@ -10,15 +10,15 @@ function BilliardsAniMgr:createLinkEffect(rootNode, nLinkCount)
     sprite:setCascadeOpacityEnabled(true)
     sprite:setGlobalZOrder(150000)
 
-    local emitter = cc.ParticleFlower:create()
-    if emitter then
-        sprite:addChild(emitter, 10)
-        emitter:setOpacity(0.5)
-        emitter:setTexture(cc.Director:getInstance():getTextureCache():addImage("gameBilliards/effect/stars.png"))
-        emitter:setPosition(cc.p(20, 0))
-        emitter:setLocalZOrder(-1)
-        emitter:setScale(1.5)
-    end
+--    local emitter = cc.ParticleFlower:create()
+--    if emitter then
+--        sprite:addChild(emitter, 10)
+--        emitter:setOpacity(0.5)
+--        emitter:setTexture(cc.Director:getInstance():getTextureCache():addImage("gameBilliards/effect/stars.png"))
+--        emitter:setPosition(cc.p(20, 0))
+--        emitter:setLocalZOrder(-1)
+--        emitter:setScale(1.5)
+--    end
 
     local spine = sp.SkeletonAnimation:create("spine/skeleton.json", "spine/skeleton.atlas", 1)
     if spine then
@@ -33,8 +33,8 @@ function BilliardsAniMgr:createLinkEffect(rootNode, nLinkCount)
     if nLinkCount > 9 then
         local ten = math.modf(nLinkCount / 10)
         local one = nLinkCount % 10
-        local link1 = ccui.ImageView:create("gameBilliards/eightBall/img_num_" .. ten .. ".png", UI_TEX_TYPE_LOCAL)
-        local link2 = ccui.ImageView:create("gameBilliards/eightBall/img_num_" .. one .. ".png", UI_TEX_TYPE_LOCAL)
+        local link1 = ccui.ImageView:create("img_num_" .. ten .. ".png", UI_TEX_TYPE_PLIST)
+        local link2 = ccui.ImageView:create("img_num_" .. one .. ".png", UI_TEX_TYPE_PLIST)
         link1:setAnchorPoint(cc.p(0.5, 0.5))
         link1:setScale(1)
         link1:setPositionX(-100)
@@ -46,7 +46,7 @@ function BilliardsAniMgr:createLinkEffect(rootNode, nLinkCount)
         sprite:addChild(link2)
         link2:setCascadeOpacityEnabled(true)
     else
-        local link = ccui.ImageView:create("gameBilliards/eightBall/img_num_" .. nLinkCount .. ".png", UI_TEX_TYPE_LOCAL)
+        local link = ccui.ImageView:create("img_num_" .. nLinkCount .. ".png", UI_TEX_TYPE_PLIST)
         if link then
             link:setAnchorPoint(cc.p(0.5, 0.5))
             link:setScale(1)
@@ -56,7 +56,7 @@ function BilliardsAniMgr:createLinkEffect(rootNode, nLinkCount)
         end
     end
 
-    local word = ccui.ImageView:create("gameBilliards/eightBall/img_Effect_Link.png", UI_TEX_TYPE_LOCAL)
+    local word = ccui.ImageView:create("img_Effect_Link.png", UI_TEX_TYPE_PLIST)
     if word then
         word:setAnchorPoint(cc.p(0.5, 0.5))
         word:setScale(1)
@@ -98,11 +98,11 @@ end
 function BilliardsAniMgr:createWordEffect(rootNode, nType)
     local spineWord
     if nType == g_EightBallData.word.your then
-        spineWord = cc.Sprite:create("gameBilliards/eightBall/eightBall_Word_YourRound.png")
+        spineWord = cc.Sprite:createWithSpriteFrameName("eightBall_Word_YourRound.png")
     elseif nType == g_EightBallData.word.full then
-        spineWord = cc.Sprite:create("gameBilliards/eightBall/eightBall_Word_HitHalfBall.png")
+        spineWord = cc.Sprite:createWithSpriteFrameName("eightBall_Word_HitHalfBall.png")
     elseif nType == g_EightBallData.word.half then
-        spineWord = cc.Sprite:create("gameBilliards/eightBall/eightBall_Word_HitFullBall.png")
+        spineWord = cc.Sprite:createWithSpriteFrameName("eightBall_Word_HitFullBall.png")
     end
     spineWord:setCascadeOpacityEnabled(true)
     spineWord:setGlobalZOrder(150000)
@@ -267,7 +267,7 @@ function BilliardsAniMgr:setHeadTimerAni(Bg, leftTime, callback)
     if EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
         local ProgressTimerAction = Bg:getChildByTag(g_EightBallData.g_Border_Tag.timer)
         if not ProgressTimerAction then
-            local sprite = cc.Sprite:create("gameBilliards/eightBall/eightBall_TimeProgress.png")
+            local sprite = cc.Sprite:createWithSpriteFrameName("eightBall_TimeProgress.png")
             ProgressTimerAction = cc.ProgressTimer:create(sprite)
             ProgressTimerAction:setType(cc.PROGRESS_TIMER_TYPE_RADIAL)
             ProgressTimerAction:setPosition(cc.p(Bg:getContentSize().width / 2, Bg:getContentSize().height / 2))

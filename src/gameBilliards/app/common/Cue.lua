@@ -1,4 +1,4 @@
-local Cue = class("Cue", function() return cc.Sprite:create() end)
+local Cue = class("Cue", function() return cc.Sprite:createWithSpriteFrameName("eightBall_Cue.png") end)
 
 local m_RootBall
 
@@ -7,21 +7,20 @@ local m_RootBall
 --构造函数传参，母球引用保留
 function Cue:ctor(_root)
     m_RootBall = _root
-    self:setTexture("gameBilliards/eightBall/eightBall_Cue.png")
     self:setAnchorPoint(1,0.5)
     self:setTag(g_EightBallData.g_Border_Tag.cue)
     local pos = _root:getContentSize().width/2
     self:setPosition(cc.p(pos,pos))
     _root:addChild(self)
     --标记点
-    local spriteTag = cc.Sprite:create("gameBilliards/eightBall/eightBall_HighLowPole_RedPint.png")
+    local spriteTag = cc.Sprite:createWithSpriteFrameName("eightBall_HighLowPole_RedPint.png")
     spriteTag:setTag(51)
     spriteTag:setAnchorPoint(cc.p(0.5,0.5))
     spriteTag:setPosition(self:getContentSize().width/2,self:getContentSize().height/2)
     spriteTag:setVisible(false)
     self:addChild(spriteTag)
     --路径检测直线精灵
-    self.spriteLine = ccui.Scale9Sprite:create("gameBilliards/eightBall/eightBall_DrawLine.png")
+    self.spriteLine = ccui.Scale9Sprite:createWithSpriteFrameName("eightBall_DrawLine.png")
     self.spriteLine:setAnchorPoint(cc.p(0,0.5))
     self.spriteLine:setCapInsets(cc.rect(1,1,self.spriteLine:getContentSize().width-2,self.spriteLine:getContentSize().height-2))
     self.spriteLine:setScale9Enabled(true)
@@ -42,13 +41,13 @@ function Cue:ctor(_root)
     cueCheckBorder:setPosition(cc.p(_borderWidth/2,self.spriteLine:getContentSize().height/2))
     self.spriteLine:addChild(cueCheckBorder)
 
-    self.circleCheck = cc.Sprite:create("gameBilliards/eightBall/eightBall_DrawCircle.png")
+    self.circleCheck = cc.Sprite:createWithSpriteFrameName("eightBall_DrawCircle.png")
     self.circleCheck:setTag(g_EightBallData.g_Border_Tag.circleCheck)
     self.circleCheck:setPosition(0,self.spriteLine:getContentSize().height/2)
     self.circleCheck:setVisible(false)
     self.spriteLine:addChild(self.circleCheck)
 
-    self.CircleShadow = cc.Sprite:create("gameBilliards/eightBall/eightBall_DrawCircle_Shadow.png")
+    self.CircleShadow = cc.Sprite:createWithSpriteFrameName("eightBall_DrawCircle_Shadow.png")
     self.CircleShadow:setTag(g_EightBallData.g_Border_Tag.circleShadow)
     self.CircleShadow:setPosition(cc.p(pos,pos))
     self.circleCheck:addChild(self.CircleShadow)
@@ -71,10 +70,10 @@ end
 
 function Cue:setCircleByLegal(isLegal)
     if not isLegal then
-        self.CircleShadow:setTexture("gameBilliards/eightBall/eightBall_DrawCircle_Red.png")
+        self.CircleShadow:setSpriteFrame("eightBall_DrawCircle_Red.png")
         return
     end
-    self.CircleShadow:setTexture("gameBilliards/eightBall/eightBall_DrawCircle_Shadow.png")
+    self.CircleShadow:setSpriteFrame("eightBall_DrawCircle_Shadow.png")
 end
 
 --重置杆前后位置

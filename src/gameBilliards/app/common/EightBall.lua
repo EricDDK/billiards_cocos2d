@@ -116,9 +116,10 @@ end
 -- 构造函数
 function EightBall:ctor(nTag)
     --self.mBallState = g_EightBallData.ballState.stop
-    self:setTexture("gameBilliards/eightBall/eightBall_TransparentBall.png")
+    --self:setTexture("gameBilliards/eightBall/eightBall_TransparentBall.png")
     self:setScale(g_EightBallData.radius/(self:getContentSize().width/2))
     self:setTag(nTag)
+    self:setVisible(false)
     --self:setGlobalZOrder(1002+nTag)
     if nTag == g_EightBallData.g_Border_Tag.whiteBall then
         self:setPhysicsBody(cc.PhysicsBody:createCircle(self:getContentSize().width / 2, g_EightBallData.whilteBallPhysicsMaterial))
@@ -145,13 +146,13 @@ end
 -- 加载其他组件(白球)
 function EightBall:loadOtherCompernent()
     local radius = self:getContentSize().width/2
-    local whiteShadow = cc.Sprite:create("gameBilliards/eightBall/eightBall_WhiteBall_BigCircle.png")
+    local whiteShadow = cc.Sprite:createWithSpriteFrameName("eightBall_WhiteBall_BigCircle.png")
     whiteShadow:setTag(g_EightBallData.g_Border_Tag.whiteShadow)
     whiteShadow:setPosition(cc.p(radius,radius))
     whiteShadow:setVisible(false)
     self:addChild(whiteShadow)
 
-    local whiteHand = cc.Sprite:create("gameBilliards/eightBall/eightBall_WhiteBall_Hand.png")
+    local whiteHand = cc.Sprite:createWithSpriteFrameName("eightBall_WhiteBall_Hand.png")
     whiteHand:setTag(g_EightBallData.g_Border_Tag.moveHand)
     whiteHand:setPosition(cc.p(radius,radius))
     whiteHand:setCameraMask(cc.CameraFlag.USER2)
@@ -159,7 +160,7 @@ function EightBall:loadOtherCompernent()
     whiteHand:setVisible(false)
     self:addChild(whiteHand)
 
-    local forbidden = cc.Sprite:create("gameBilliards/eightBall/eightBall_ForbidSet_WhiteBall.png")
+    local forbidden = cc.Sprite:createWithSpriteFrameName("eightBall_ForbidSet_WhiteBall.png")
     forbidden:setTag(g_EightBallData.g_Border_Tag.forbidden)
     forbidden:setPosition(cc.p(radius,radius))
     forbidden:setCameraMask(cc.CameraFlag.USER2)
@@ -172,9 +173,9 @@ end
 function EightBall:loadEffect()
     local highLight
     if self:getTag() == 0 then
-        highLight = ccui.ImageView:create("gameBilliards/eightBall/eightBall_Ball_HighLight.png", UI_TEX_TYPE_LOCAL)
+        highLight = ccui.ImageView:create("eightBall_Ball_HighLight.png", UI_TEX_TYPE_PLIST)
     else
-        highLight = ccui.ImageView:create("gameBilliards/eightBall/eightBall_Ball_HighLight.png", UI_TEX_TYPE_LOCAL)
+        highLight = ccui.ImageView:create("eightBall_Ball_HighLight.png", UI_TEX_TYPE_PLIST)
     end
     highLight:setCascadeOpacityEnabled(false)
     highLight:setAnchorPoint(cc.p(0.5, 0.5))
@@ -184,7 +185,7 @@ function EightBall:loadEffect()
     highLight:setGlobalZOrder(2000)
     highLight:setTag(g_EightBallData.g_Border_Tag.heighLight)
     self:addChild(highLight)
-    local shadow = ccui.ImageView:create("gameBilliards/eightBall/eightBall_Ball_Shadow.png", UI_TEX_TYPE_LOCAL)
+    local shadow = ccui.ImageView:create("eightBall_Ball_Shadow.png", UI_TEX_TYPE_PLIST)
     shadow:setCascadeOpacityEnabled(false)
     shadow:setScale(0.6)
     shadow:setAnchorPoint(cc.p(0.5, 0.5))
@@ -208,7 +209,7 @@ end
 function EightBall:loadTipsEffect()
     if self:getBallState() ~= g_EightBallData.g_Border_Tag.inHole then
         local radius = self:getContentSize().width / 2
-        local tips = cc.Sprite:create("gameBilliards/eightBall/eightBall_Tips.png")
+        local tips = cc.Sprite:createWithSpriteFrameName("eightBall_Tips.png")
         if tips then
             tips:setTag(g_EightBallData.g_Border_Tag.tips)
             tips:setPosition(cc.p(radius, radius))

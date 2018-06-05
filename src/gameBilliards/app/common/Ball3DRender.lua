@@ -23,7 +23,6 @@ end
 --@tag
 --@母体球
 function Ball3DRender:ctor(nTag, rootBall)
-    print("3d mess is init and tag = ",nTag)
     local rigidBody = cc.Physics3DRigidBody:create(rbDes)
     local component = cc.Physics3DComponent:create(rigidBody)
     self:setTexture("gameBilliards/3d_ball/" .. nTag .. ".png")

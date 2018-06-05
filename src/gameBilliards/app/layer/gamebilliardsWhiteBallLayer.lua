@@ -14,13 +14,13 @@ function gamebilliardsWhiteBallLayer:ctor(mainLayer,posX,posY)
 end
 
 function gamebilliardsWhiteBallLayer:initView()
-    self:setGlobalZOrder(10000)
+    --self:setGlobalZOrder(10000)
     local layer = cc.LayerColor:create(cc.c4b(0, 0, 0, 100))
     if layer then
         self:addChild(layer)
     end
     self.node = cc.CSLoader:createNode("gameBilliards/csb/billiardsWhiteBallLayer.csb")
-    self.node:setGlobalZOrder(10000)
+    --self.node:setGlobalZOrder(10000)
     if self.node then
         self.node:setAnchorPoint(cc.p(0.5, 0.5))
         self.node:setPosition(display.center)
@@ -31,9 +31,9 @@ function gamebilliardsWhiteBallLayer:initView()
         end
 
         self.ball_white = self.node:getChildByTag(1)
-        self.ball_white:setGlobalZOrder(10000)
+        --self.ball_white:setGlobalZOrder(10000)
         self.redPoint = self.ball_white:getChildByTag(2)
-        self.redPoint:setGlobalZOrder(10000)
+        --self.redPoint:setGlobalZOrder(10000)
         local _value = (self.ball_white:getContentSize().width / 2-30)
         self.redPoint:setPosition(cc.p(( _value * m_posX + _value+35 ),( _value * m_posY + _value+35 )))
         self.backGround = self.node:getChildByTag(3)
@@ -135,18 +135,7 @@ function gamebilliardsWhiteBallLayer:btnCallback(sender, eventType)
 end
 
 function gamebilliardsWhiteBallLayer:onEnter()
-    self.camera_Default = cc.Director:getInstance():getRunningScene():getDefaultCamera()
-    local zeye = cc.Director:getInstance():getZEye()
-    self._physicsScene = cc.Director:getInstance():getRunningScene()
-    local winSize = cc.Director:getInstance():getWinSize()
-    self._camera = cc.Camera:createOrthographic(winSize.width, winSize.height, -100.0, 100.0)
-    self._camera:setDepth(5.0)
-    self._camera:setPosition3D(cc.vec3(0.0,0.0,0.0))
-    --self._camera:lookAt(cc.vec3(winSize.width/2, winSize.height/2, 0.0), cc.vec3(0.0, 1.0, 0.0))
-    self._camera:setCameraFlag(cc.CameraFlag.USER3)
-    self:addChild(self._camera)
-    self._physicsScene:setPhysics3DDebugCamera(self._camera)
-    self:setCameraMask(cc.CameraFlag.USER3)
+    self:set3DCamera()
 end
 
 function gamebilliardsWhiteBallLayer:onExit()

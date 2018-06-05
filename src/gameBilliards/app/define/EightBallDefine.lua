@@ -79,7 +79,7 @@ EightBallDefine.sendHitResultInterval                   = 0.5  --发送击球结
 
 EightBallDefine.receiveHitWhiteBall                     = 0.5  --收到击球信息后击打延迟
 
-EightBallDefine.operateTimer                            = 20   --定时器间隔
+EightBallDefine.operateTimer                            = 25   --定时器间隔
 
 ----------------------------------------------------------------------------------------------------------
 
