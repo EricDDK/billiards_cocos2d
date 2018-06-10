@@ -8,9 +8,9 @@ function EightBallGameOverLayer:ctor(event)
 end
 
 function EightBallGameOverLayer:initView(event)
-    event = { }
-    event.WinUserID = 2486410
-    event.WinScore = 3000
+--    event = { }
+--    event.WinUserID = 2486410
+--    event.WinScore = 3000
 
     local layer = cc.LayerColor:create(cc.c4b(0, 0, 0, 150))
     if layer then
@@ -34,7 +34,7 @@ function EightBallGameOverLayer:initView(event)
         self.btn_Again:addTouchEventListener(btnCallback)
     end
     self:initGameInfo(event)
-    self:initGameOverAni()
+    self:initGameOverAni(event)
 end
 
 function EightBallGameOverLayer:initGameInfo(event)
@@ -69,8 +69,8 @@ function EightBallGameOverLayer:initGameInfo(event)
     end
 end
 
-function EightBallGameOverLayer:initGameOverAni()
-    
+function EightBallGameOverLayer:initGameOverAni(event)
+    BilliardsAniMgr:setGameOverAni((event.WinUserID == player:getPlayerUserID() and true or false), self.node)
 end
 
 -- 返回大厅
@@ -88,6 +88,7 @@ function EightBallGameOverLayer:playAgain()
         seatID = G_PlayerInfoList[_key].SeatID,
     }
     ClientNetManager.getInstance():requestCmd(g_Room_REQ_GAMEREADY, requestData, G_ProtocolType.Room)
+    EBGameControl:startGame()
     tool.closeLayerAni(self.node,self)
 end
 

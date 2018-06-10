@@ -16,18 +16,26 @@ end
 -- 调整速度，刷新,3D动画的刷新以及速度的刷新
 --@nTime 这次击打的当前时间，也就是多少帧
 function EightBall:adjustBallSpeed(nTime)
-    local velocity = self:getPhysicsBody():getVelocity()
-    local v = math.pow(velocity.x, 2) + math.pow(velocity.y, 2)
-    if nTime and nTime > 2 and v <= g_EightBallData.ballDampingValue then
-        self:getPhysicsBody():setLinearDamping(g_EightBallData.ballLinearDamping * g_EightBallData.ballLinearIncreaseMultiple)
-        if v <= g_EightBallData.ballDoubleDampingValue then
-            self:getPhysicsBody():setLinearDamping(g_EightBallData.ballLinearDamping * g_EightBallData.ballLinearIncreaseDoubleMultiple)
+    local velocity
+    local v
+    if nTime and nTime > g_EightBallData.increaseVelocityTime then
+        velocity = self:getPhysicsBody():getVelocity()
+        v = math.pow(velocity.x, 2) + math.pow(velocity.y, 2)
+        if v <= g_EightBallData.ballDampingValue then
+            self:getPhysicsBody():setLinearDamping(g_EightBallData.ballLinearIncreaseMultiple)
+            if v <= g_EightBallData.ballDoubleDampingValue then
+                self:getPhysicsBody():setLinearDamping(g_EightBallData.ballLinearIncreaseDoubleMultiple)
+            end
         end
+    end
+    if not velocity then
+        velocity = self:getPhysicsBody():getVelocity()
+        v = math.pow(velocity.x, 2) + math.pow(velocity.y, 2)
     end
     if v ~= 0 then
         local Texture = self:getChildByTag(g_EightBallData.g_Border_Tag.texture3D)
         if Texture then
-            Texture:adjust3DRolling(velocity,self:getPhysicsBody():getAngularVelocity())
+            Texture:adjust3DRolling(velocity, self:getPhysicsBody():getAngularVelocity())
         end
     end
 end
@@ -96,7 +104,7 @@ function EightBall:dealBallInBag()
     self:resetForceAndEffect()
     self:setBallState(g_EightBallData.ballState.inHole)
     self:setPosition(g_EightBallData.inBagPos)
-    self:getPhysicsBody():applyForce(cc.p(-50000, -500000), cc.p(0, 0))
+    self:getPhysicsBody():applyForce(cc.p(-300, -300), cc.p(0, 0))
 end
 
 -- 重置球
@@ -135,6 +143,8 @@ function EightBall:ctor(nTag)
     self:setPosition(cc.p(nTag*40+1500,1500))
     self:setBallState(g_EightBallData.ballState.stop)
     self:set3DRender(nTag)  --加载3D shader球面
+    self:setCameraMask(cc.CameraFlag.USER2)
+    self:setGlobalZOrder(-1000)
     --self:setRotation(90)  --测试用
     if nTag == g_EightBallData.g_Border_Tag.whiteBall then
         self:loadOtherCompernent()
@@ -173,18 +183,21 @@ end
 function EightBall:loadEffect()
     local highLight
     if self:getTag() == 0 then
-        highLight = ccui.ImageView:create("eightBall_Ball_HighLight.png", UI_TEX_TYPE_PLIST)
+        highLight = cc.Sprite:create("gameBilliards/eightBall/eightBall_WhiteBall_HighLight.png")
     else
-        highLight = ccui.ImageView:create("eightBall_Ball_HighLight.png", UI_TEX_TYPE_PLIST)
+        highLight = cc.Sprite:createWithSpriteFrameName("eightBall_Ball_HighLight.png")
     end
-    highLight:setCascadeOpacityEnabled(false)
-    highLight:setAnchorPoint(cc.p(0.5, 0.5))
-    highLight:setScale(0.6)
-    highLight:setPosition(cc.p(self:getContentSize().width / 2, self:getContentSize().height / 2))
-    highLight:setCameraMask(cc.CameraFlag.USER2)
-    highLight:setGlobalZOrder(2000)
-    highLight:setTag(g_EightBallData.g_Border_Tag.heighLight)
-    self:addChild(highLight)
+    if highLight then
+        highLight:setCascadeOpacityEnabled(false)
+        highLight:setAnchorPoint(cc.p(0.5, 0.5))
+        highLight:setScale(0.6)
+        highLight:setPosition(cc.p(self:getContentSize().width / 2, self:getContentSize().height / 2))
+        highLight:setCameraMask(cc.CameraFlag.USER2)
+        --ighLight:setGlobalZOrder(0)
+        highLight:setLocalZOrder(-100)
+        highLight:setTag(g_EightBallData.g_Border_Tag.heighLight)
+        self:addChild(highLight)
+    end
     local shadow = ccui.ImageView:create("eightBall_Ball_Shadow.png", UI_TEX_TYPE_PLIST)
     shadow:setCascadeOpacityEnabled(false)
     shadow:setScale(0.6)
@@ -213,6 +226,8 @@ function EightBall:loadTipsEffect()
         if tips then
             tips:setTag(g_EightBallData.g_Border_Tag.tips)
             tips:setPosition(cc.p(radius, radius))
+            tips:setCascadeOpacityEnabled(true)
+            tips:setOpacity(100)
             tips:setScale(0.5)
             self:addChild(tips)
         end
@@ -223,8 +238,8 @@ function EightBall:startTipsEffect()
     if self.mBallState == g_EightBallData.ballState.inHole then
         return
     end
-    local action1 = cc.ScaleTo:create(1, 1.3)
-    local action2 = cc.ScaleTo:create(1, 0.5)
+    local action1 = cc.ScaleTo:create(1, 1.2)
+    local action2 = cc.ScaleTo:create(1, 0.6)
     local action = cc.RepeatForever:create(cc.Sequence:create(action1, action2))
     local tips = self:getChildByTag(g_EightBallData.g_Border_Tag.tips)
     if tips and not tolua.isnull(tips) then
@@ -290,10 +305,12 @@ function EightBall:whiteBallTouchEnded(rootNode,pos,isReceive,isLimitedPos)
             self:setPosition(cc.p(pos.x,pos.y))
         end
         if not isReceive then
+            print("=============")
             self:sendSetWhiteBallMessage(pos.x,pos.y,rootNode,true)
         end
     else
-        self:setPosition(cc.p(oldWhiteBallPos.x,oldWhiteBallPos.y))
+        self:sendSetWhiteBallMessage(self:getPositionX(),self:getPositionY(),rootNode,true)
+        --self:setPosition(cc.p(oldWhiteBallPos.x,oldWhiteBallPos.y))
     end
 end
 
@@ -331,8 +348,11 @@ local mCanSendSetWhiteBallMessage = true
 --@ rootNode 游戏场景layer
 --@ isEnded 如果是触摸停止事件必然发送
 function EightBall:sendSetWhiteBallMessage(posX,posY, rootNode,isEnded)
-    if not self:getTag() == 0 then
+    if not self:getTag() == 0 or EBGameControl:getGameState() == g_EightBallData.gameState.practise then
         return
+    end
+    if EBGameControl:getGameState() == g_EightBallData.gameState.waiting and posX > g_EightBallData.whiteBallOriginalPos.x then
+        posX = g_EightBallData.whiteBallOriginalPos.x
     end
     if mCanSendSetWhiteBallMessage or isEnded then
         local requestData = {
@@ -353,33 +373,56 @@ end
 --@ event 球信息
 --@ isResume 是否是断线重连
 function EightBall:syncBallState(event,isResume)
+    if event.fPositionX <= g_EightBallData.inBagPos.x then
+        return
+    end
     self:setPosition(cc.p(event.fPositionX,event.fPositionY))
     self:getPhysicsBody():setVelocity(cc.p(event.fVelocityX,event.fVelocityY))
-    self:getPhysicsBody():setAngularVelocity(event.fAngularVelocity)
-    if isResume then
-        self:getPhysicsBody():applyForce(cc.p(event.fUnevenBarsForceX,event.fUnevenBarsForceY),cc.p(0,0))
-    end
+    --self:getPhysicsBody():setAngularVelocity(event.fAngularVelocity)
+    -- if isResume then
+    --     self:getPhysicsBody():applyForce(cc.p(event.fUnevenBarsForceX,event.fUnevenBarsForceY),cc.p(0,0))
+    -- end
 end
 
 -- 获取球帧同步信息
-function EightBall:getBallSyncState()
-    local _positionX, _positionY = self:getPosition()
+function EightBall:getBallSyncState(syncArray)
     local _velocity = self:getPhysicsBody():getVelocity()
-    local _angularVelocity = self:getPhysicsBody():getAngularVelocity()
-    local _unevenBarsForce = self:getWhiteBallContinuesForce()
-    local _prickStrokeForce = cc.p(0.0, 0.0)
+    if _velocity.x == 0 and _velocity.y == 0 then
+        return
+    end
+    local _positionX, _positionY = self:getPosition()
+    if _positionX < g_EightBallData.inBagPos.x then
+        return
+    end
+    -- local _angularVelocity = self:getPhysicsBody():getAngularVelocity()
+    -- local _unevenBarsForce = self:getWhiteBallContinuesForce()
+    -- local _prickStrokeForce = cc.p(0.0, 0.0)
     -- 保留小数点后5位
-    return {
+    table.insert(syncArray,{
+        Tag = self:getTag(),
         fPositionX = string.format("%.5f", _positionX),
         fPositionY = string.format("%.5f", _positionY),
         fVelocityX = string.format("%.5f", _velocity.x),
         fVelocityY = string.format("%.5f", _velocity.y),
-        fAngularVelocity = string.format("%.5f", _angularVelocity),
-        fUnevenBarsForceX = string.format("%.5f", _unevenBarsForce.x),
-        fUnevenBarsForceY = string.format("%.5f", _unevenBarsForce.y),
-        fPrickStrokeForceX = string.format("%.5f", _prickStrokeForce.x),
-        fPrickStrokeForceY = string.format("%.5f", _prickStrokeForce.y),
-    }
+        -- fAngularVelocity = string.format("%.5f", _angularVelocity),
+        -- fUnevenBarsForceX = string.format("%.5f", _unevenBarsForce.x),
+        -- fUnevenBarsForceY = string.format("%.5f", _unevenBarsForce.y),
+        -- fPrickStrokeForceX = string.format("%.5f", _prickStrokeForce.x),
+        -- fPrickStrokeForceY = string.format("%.5f", _prickStrokeForce.y),
+    })
+    
+    -- return {
+    --     Tag = self:getTag(),
+    --     fPositionX = string.format("%.5f", _positionX),
+    --     fPositionY = string.format("%.5f", _positionY),
+    --     fVelocityX = string.format("%.5f", _velocity.x),
+    --     fVelocityY = string.format("%.5f", _velocity.y),
+    --     -- fAngularVelocity = string.format("%.5f", _angularVelocity),
+    --     -- fUnevenBarsForceX = string.format("%.5f", _unevenBarsForce.x),
+    --     -- fUnevenBarsForceY = string.format("%.5f", _unevenBarsForce.y),
+    --     -- fPrickStrokeForceX = string.format("%.5f", _prickStrokeForce.x),
+    --     -- fPrickStrokeForceY = string.format("%.5f", _prickStrokeForce.y),
+    -- }
 end
 
 -- 收到服务器同步的结果消息，同步球的所有位置

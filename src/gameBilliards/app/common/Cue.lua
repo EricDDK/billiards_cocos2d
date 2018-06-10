@@ -114,7 +114,7 @@ function Cue:launchBall(_forcePercent, rootNode, rotateX, rotateY, otherX, other
     
     --练习模式
     if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
-        m_RootBall:getPhysicsBody():setVelocity(
+        m_RootBall:getPhysicsBody():applyImpulse(
         cc.p(
         diffX * g_EightBallData.lineSpeedRatio * _forcePercent,
         diffY * g_EightBallData.lineSpeedRatio * _forcePercent)
@@ -155,7 +155,7 @@ function Cue:receiveLauchBall(event, callback)
             self:resetPos()
             EightBallGameManager:setCanRefreshBallAni(true)
             m_RootBall:setPosition(cc.p(event.fPositionX, event.fPositionY))
-            m_RootBall:getPhysicsBody():setVelocity(cc.p(event.fVelocityX, event.fVelocityY))
+            m_RootBall:getPhysicsBody():applyImpulse(cc.p(event.fVelocityX, event.fVelocityY))
             m_RootBall:getPhysicsBody():setAngularVelocity(event.fAngularVelocity)
             m_RootBall:getPhysicsBody():applyForce(cc.p(event.fUnevenBarsX, event.fUnevenBarsY), cc.p(0, 0))
             m_RootBall:setWhiteBallContinuesForce(cc.p(event.fUnevenBarsX, event.fUnevenBarsY))

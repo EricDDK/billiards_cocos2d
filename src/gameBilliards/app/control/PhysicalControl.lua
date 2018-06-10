@@ -6,7 +6,7 @@ local function createPhysicalBorderLine(pos1, pos2, root, tag, isBag)
     local border = cc.Node:create()
     border:setTag(tag)
     if not isBag then
-        border:setPhysicsBody(cc.PhysicsBody:createEdgeSegment(pos1, pos2, g_EightBallData.borderPhysicsMaterial))
+        border:setPhysicsBody(cc.PhysicsBody:createEdgeSegment(pos1, pos2, g_EightBallData.borderPhysicsMaterial,3.0))
         border:getPhysicsBody():setCategoryBitmask(0x01)
         border:getPhysicsBody():setContactTestBitmask(0x01)
         border:getPhysicsBody():setCollisionBitmask(0x03)
@@ -23,7 +23,7 @@ end
 local function createPhysicalHole(pos1, pos2, radius, root, tag)
     local border = cc.Node:create()
     border:setTag(tag)
-    border:setPhysicsBody(cc.PhysicsBody:createCircle(radius))
+    border:setPhysicsBody(cc.PhysicsBody:createCircle(radius*1.2))
     border:setPosition(cc.p(pos1, pos2))
     border:getPhysicsBody():setCategoryBitmask(0x01)
     border:getPhysicsBody():setContactTestBitmask(0x01)
@@ -74,18 +74,18 @@ function PhyControl:createEightBallInnerBorder(desk)
     createPhysicalBorderLine(cc.p(456, 488), cc.p(91, 488), desk, tag)
     createPhysicalBorderLine(cc.p(58, 456), cc.p(58, 91), desk, tag)
 
-    createPhysicalBorderLine(cc.p(91, 59), cc.p(72.5, 41.7), desk, tag)
-    createPhysicalBorderLine(cc.p(457, 59), cc.p(461.5, 41.7), desk, tag)
-    createPhysicalBorderLine(cc.p(512, 59), cc.p(506.9, 41.7), desk, tag)
-    createPhysicalBorderLine(cc.p(878, 59), cc.p(894.5, 41.7), desk, tag)
-    createPhysicalBorderLine(cc.p(910, 92), cc.p(927.7, 75.1), desk, tag)
-    createPhysicalBorderLine(cc.p(910, 455), cc.p(927.7, 473.1), desk, tag)
-    createPhysicalBorderLine(cc.p(878, 488), cc.p(894.7, 506.1), desk, tag)
-    createPhysicalBorderLine(cc.p(512, 488), cc.p(506.5, 506.1), desk, tag)
-    createPhysicalBorderLine(cc.p(456, 488), cc.p(462, 506.1), desk, tag)
-    createPhysicalBorderLine(cc.p(91, 488), cc.p(74.2, 506.1), desk, tag)
-    createPhysicalBorderLine(cc.p(58, 456), cc.p(41.4, 473), desk, tag)
-    createPhysicalBorderLine(cc.p(58, 91), cc.p(41.4, 74.2), desk, tag)
+    -- createPhysicalBorderLine(cc.p(91, 59), cc.p(72.5, 41.7), desk, tag)
+    -- createPhysicalBorderLine(cc.p(457, 59), cc.p(461.5, 41.7), desk, tag)
+    -- createPhysicalBorderLine(cc.p(512, 59), cc.p(506.9, 41.7), desk, tag)
+    -- createPhysicalBorderLine(cc.p(878, 59), cc.p(894.5, 41.7), desk, tag)
+    -- createPhysicalBorderLine(cc.p(910, 92), cc.p(927.7, 75.1), desk, tag)
+    -- createPhysicalBorderLine(cc.p(910, 455), cc.p(927.7, 473.1), desk, tag)
+    -- createPhysicalBorderLine(cc.p(878, 488), cc.p(894.7, 506.1), desk, tag)
+    -- createPhysicalBorderLine(cc.p(512, 488), cc.p(506.5, 506.1), desk, tag)
+    -- createPhysicalBorderLine(cc.p(456, 488), cc.p(462, 506.1), desk, tag)
+    -- createPhysicalBorderLine(cc.p(91, 488), cc.p(74.2, 506.1), desk, tag)
+    -- createPhysicalBorderLine(cc.p(58, 456), cc.p(41.4, 473), desk, tag)
+    -- createPhysicalBorderLine(cc.p(58, 91), cc.p(41.4, 74.2), desk, tag)
 end
 
 -- 八球洞边界
@@ -94,8 +94,8 @@ function PhyControl:createEightBallHoleBorder(desk)
     local tag = g_EightBallData.g_Border_Tag.hole
     createPhysicalHole(48, 48, radius, desk, tag)
     createPhysicalHole(48, 498.6, radius, desk, tag)
-    createPhysicalHole(485, 35.6, radius, desk, tag)
-    createPhysicalHole(485, 511, radius, desk, tag)
+    createPhysicalHole(485, 30, radius, desk, tag)
+    createPhysicalHole(485, 516, radius, desk, tag)
     createPhysicalHole(921, 498.6, radius, desk, tag)
     createPhysicalHole(921, 48, radius, desk, tag)
 end
@@ -159,7 +159,7 @@ function PhyControl:createEightBallAllBalls(desk,isResume)
     local curNumber = 1
     local curColY = 0
     for i=1,5 do
-        ballPos.x = ballPos.x + diameter
+        ballPos.x = ballPos.x + diameter-3
         ballPos.y = ballPos.y - (diameter)
         curColY = ballPos.y
         for j=1,i do
@@ -202,7 +202,7 @@ function PhyControl:resetAllBallsPos(rootNode)
     local curNumber = 1
     local curColY = 0
     for i=1,5 do
-        ballPos.x = ballPos.x + diameter
+        ballPos.x = ballPos.x + diameter- 3
         ballPos.y = ballPos.y - (diameter)
         curColY = ballPos.y
         for j=1,i do
@@ -218,10 +218,10 @@ function PhyControl:resetAllBallsPos(rootNode)
         end
     end
 
---    for i=0,15 do
---        local ball = desk:getChildByTag(i)
---        print(i.." num ball pos is ",ball:getPositionX(),ball:getPositionY())
---    end
+    for i=0,15 do
+        local ball = desk:getChildByTag(i)
+        print(i.." num ball pos is ",ball:getPositionX(),ball:getPositionY())
+    end
     
 end
 
@@ -265,7 +265,7 @@ function PhyControl:drawRouteDetection(rotate, cue, whiteBall, mainLayer)
             local json = mathMgr.getNewRx_Ry(_rectPos.x, _rectPos.y, ballPosX, ballPosY, rotate)
             if mathMgr.computeCollision(1136,_ball:getContentSize().width,_ball:getContentSize().width/2,json.newRx,json.newRy) then
                 local _ballDistance = mathMgr.twoDistance(_whitePos.x,_whitePos.y,ballPosX,ballPosY)
-                if ballPosX >= 0 then
+                if ballPosX > 0 then
                     table.insert(_tmpCollisionBall, { tag = i, distance = _ballDistance })
                 end
             end
@@ -294,8 +294,12 @@ function PhyControl:drawRouteDetection(rotate, cue, whiteBall, mainLayer)
         -- 1是默认值，白圈判定
         if EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
             local myColor = EightBallGameManager:getMyColor()
-            if myColor == g_EightBallData.HitColor.black and _tmpCollisionBall[1].tag == 8 then
-                cue:setCircleByLegal(true)
+            if myColor == g_EightBallData.HitColor.black then
+                if _tmpCollisionBall[1].tag == 8 then
+                    cue:setCircleByLegal(true)
+                else
+                    cue:setCircleByLegal(false)
+                end
             elseif ( _tmpCollisionBall[1].tag >= 8 and myColor == g_EightBallData.HitColor.full) 
             or (_tmpCollisionBall[1].tag <= 8 and myColor == g_EightBallData.HitColor.half) then
                 cue:setCircleByLegal(false)

@@ -1,24 +1,26 @@
 local EightBallDefine = {}
 
-EightBallDefine.netSynchronizationRate                  = 0.1  --网络帧同步的间隔时间（const）
+EightBallDefine.netSynchronizationRate                  = 0.05  --网络帧同步的间隔时间（const）
 
 ----------------------------------------------------------------------------------------------------------
 
-local ballDensity                                       = 1  --球体密度
+local ballDensity                                       = 0  --球体密度
 
 local ballRestiution                                    = 0.95  --球体弹性(0-1)
 
-local whiteBallFiction                                  = 0.05   --白球摩擦力
+local whiteBallFiction                                  = 0.2   --白球摩擦力
 
 local ballFriction                                      = 0  --球体摩擦力
 
-EightBallDefine.ballLinearDamping                       = 0.5  --球体线性阻尼(空气阻力)
+EightBallDefine.increaseVelocityTime                    = 2  --开球多久后可以开始减速
 
-EightBallDefine.ballLinearIncreaseMultiple              = 1.5  --当球体速度小于ballDampingValue时，速度减少速率的倍数
+EightBallDefine.ballLinearDamping                       = 0.4  --球体线性阻尼(空气阻力)
 
-EightBallDefine.ballLinearIncreaseDoubleMultiple        = 2  --二次衰减速率减少倍数
+EightBallDefine.ballLinearIncreaseMultiple              = 0.6  --当球体速度小于ballDampingValue时，速度多少
 
-EightBallDefine.ballDampingValue                        = 250*250   --球体衰减速度的速度阈值(多少速度就开始摩擦力翻倍)
+EightBallDefine.ballLinearIncreaseDoubleMultiple        = 1  --二次衰减速率减少
+
+EightBallDefine.ballDampingValue                        = 300*300   --球体衰减速度的速度阈值(多少速度就开始摩擦力翻倍)
 
 EightBallDefine.ballDoubleDampingValue                  = 150*150  --球体速度二次衰减
 
@@ -30,21 +32,21 @@ EightBallDefine.ballRollingRate                         = 10    --球体3d滚动
 
 local borderDensity                                     = 10000000  --边界密度
 
-local borderRestiution                                  = 0.7  --边界弹性(0-1)
+local borderRestiution                                  = 0.8  --边界弹性(0-1)
 
-local borderFriction                                    = 1  --边界摩擦力
+local borderFriction                                    = 0.5  --边界摩擦力
 
 ----------------------------------------------------------------------------------------------------------
 
-EightBallDefine.lineSpeedRatio                          = 13  --直线瞬间力量系数
+EightBallDefine.lineSpeedRatio                          = 6  --直线瞬间力量系数
 
-EightBallDefine.lineForceRatio                          = 2000  --直线击打力量系数，越大力量越大
+EightBallDefine.lineForceRatio                          = 5  --直线击打力量系数，越大力量越大
 
-EightBallDefine.rotateForceRatio                        = 5000  --高低干力量系数，越大旋转越激烈
+EightBallDefine.rotateForceRatio                        = 5  --高低干力量系数，越大旋转越激烈
 
-EightBallDefine.leftRightForceRatio                     = 150  --左右塞的力量系数
+EightBallDefine.leftRightForceRatio                     = 200  --左右塞的力量系数
 
-EightBallDefine.prickForceRatio                         = 100  --扎杆的旋转强度，越大旋转越强烈(弧线球)
+EightBallDefine.prickForceRatio                         = 10  --扎杆的旋转强度，越大旋转越强烈(弧线球)
 
 ----------------------------------------------------------------------------------------------------------
 
@@ -52,7 +54,7 @@ EightBallDefine.isDebug                                 = false  --调试模式�
 
 local Gravity                                           = -9.8  --重力 （const）
 
-EightBallDefine.freshCount                              = 5  --刷新频率const，越高增加精度(莫动)，越高越卡，每秒检测次数 （const）
+EightBallDefine.freshCount                              = 2  --刷新频率const，越高增加精度(莫动)，越高越卡，每秒检测次数 （const）
 
 EightBallDefine.screenRefreshRate                       = EightBallDefine.freshCount*60.0  --勿动，屏幕帧率，现在是5*60=300 （const）
 
@@ -80,6 +82,8 @@ EightBallDefine.sendHitResultInterval                   = 0.5  --发送击球结
 EightBallDefine.receiveHitWhiteBall                     = 0.5  --收到击球信息后击打延迟
 
 EightBallDefine.operateTimer                            = 25   --定时器间隔
+
+EightBallDefine.checkStopTimerInterval                  = 0.1  --检测停止定时器间隔
 
 ----------------------------------------------------------------------------------------------------------
 
@@ -140,6 +144,17 @@ EightBallDefine.gameRound = {
     gameOver            = 4,        --比赛结束(黑八进了)
     restart             = 5,        --首杆进黑八
     exception           = 6,        --异常情况
+}
+
+EightBallDefine.g_GZOrder = {
+    ball                = 0,        --球体Z轴
+    render3D            = 0,        --3D刚体Z轴
+    cue                 = 0,        --杆Z轴
+    heighLight           = -1,      --高光Z轴
+    checkLine           = 2000,     --碰撞检测线Z轴
+    powerBar            = 20000,    --碰撞检测线Z轴
+    whiteHand           = 2001,     --拿起白球白手Z轴
+    forbidden           = 2000,     --禁止放置白球Z轴
 }
 
 EightBallDefine.g_Border_Tag = {

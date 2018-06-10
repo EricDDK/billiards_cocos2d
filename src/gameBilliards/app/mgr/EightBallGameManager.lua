@@ -44,7 +44,10 @@ function EightBallGameManager:insertSyncBallArray(value,index)
     end
     --保留小数点后5位
     for k,v in pairs(value.BallInfoArray) do
-        preciseDecimalBallsInfo(v)
+        v.fPositionX = GetPreciseDecimal(v.fPositionX)
+        v.fPositionY = GetPreciseDecimal(v.fPositionY)
+        v.fVelocityX = GetPreciseDecimal(v.fVelocityX)
+        v.fVelocityY = GetPreciseDecimal(v.fVelocityY)
     end
     syncBallArray[index] = value
 end
@@ -95,7 +98,9 @@ end
 function EightBallGameManager:dealInHoleToServer(tag)
     -- 不是白球的进球才计算
     if tag <= 15 and tag >= 1 then
-        hitBallsProcessArray.firstInHoleBall = tag
+        if hitBallsProcessArray.firstInHoleBall < 0 then
+            hitBallsProcessArray.firstInHoleBall = tag
+        end
         --练习模式处理进球，加连杆数
         if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
             EightBallGameManager:setLinkCount(true)
@@ -193,14 +198,12 @@ function EightBallGameManager:syncHitResult(rootNode, isResume)
     print("this round hit ball userid = ", ballsResultArray.UserID)
     if ballsResultArray.UserID == player:getPlayerUserID() then
         -- 我的回合
-        rootNode.slider_PowerBar:setTouchEnabled(true)
         BilliardsAniMgr:setSliderBarAni(true, rootNode)
-        BilliardsAniMgr:setFineTurningAni(true, rootNode)
+        --BilliardsAniMgr:setFineTurningAni(true, rootNode)
     else
         -- 对方回合，我等
-        rootNode.slider_PowerBar:setTouchEnabled(false)
         BilliardsAniMgr:setSliderBarAni(false, rootNode)
-        BilliardsAniMgr:setFineTurningAni(false, rootNode)
+        --BilliardsAniMgr:setFineTurningAni(false, rootNode)
     end
     -- 设置我的击球颜色
     EightBallGameManager:setColorUserID(ballsResultArray.FullColorUserID, ballsResultArray.HalfColorUserID, rootNode)
@@ -217,7 +220,7 @@ function EightBallGameManager:syncHitResult(rootNode, isResume)
 
     -- 首杆黑八进洞，重新摆放球开始比赛
     if ballsResultArray.Result == g_EightBallData.gameRound.restart then
-        EBGameControl:startGame(rootNode)
+        EBGameControl:startGame()
         if player:getPlayerUserID() == EightBallGameManager:getCurrentUserID() then
             rootNode.whiteBall:dealWhiteBallInHole()
         end
@@ -295,6 +298,8 @@ end
 
 --是否打全色球
 function EightBallGameManager:setColorUserID(fullColorUserID,halfColorUserID,rootNode)
+    print("EightBallGameManager:setColorUserID My",mFullColorUserID,mHalfColorUserID)
+    print("EightBallGameManager:setColorUserID Game",fullColorUserID,halfColorUserID)
     -- 播放击打全色还是花色动画
     if mFullColorUserID == -1 or mHalfColorUserID == -1 then
         if player:getPlayerUserID() == fullColorUserID then

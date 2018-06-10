@@ -2,13 +2,13 @@
 local LayerWidgetBase = require("hallcenter.controllers.LayerWidgetBase")
 local BilliardsCommonLayer = class("BilliardsCommonLayer", LayerWidgetBase)
 
-function BilliardsCommonLayer:ctor(callback)
+function BilliardsCommonLayer:ctor(callback,str)
     self.callback = callback
     self:registerTouchHandler()
-    self:initView()
+    self:initView(str)
 end
 
-function BilliardsCommonLayer:initView()
+function BilliardsCommonLayer:initView(str)
     local layer = cc.LayerColor:create(cc.c4b(0, 0, 0, 100))
     if layer then
         self:addChild(layer)
@@ -25,6 +25,10 @@ function BilliardsCommonLayer:initView()
 
         local rootBg = node:getChildByTag(1)
         if rootBg then
+            self.text_Main = rootBg:getChildByTag(2)
+            if str and str ~= "" then
+                self.text_Main:setString(str)
+            end
             for i = 3, 5 do
                 local btn = rootBg:getChildByTag(i)
                 if btn then

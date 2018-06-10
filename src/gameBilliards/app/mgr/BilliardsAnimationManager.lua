@@ -24,7 +24,7 @@ function BilliardsAniMgr:createLinkEffect(rootNode, nLinkCount)
     if spine then
         spine:setAnchorPoint(cc.p(0.5, 0.5))
         spine:setScale(1.5)
-        spine:setAnimation(0, "animation", true)
+        spine:setAnimation(0, "animation", false)
         sprite:addChild(spine)
         spine:setCascadeOpacityEnabled(false)
         spine:setLocalZOrder(5)
@@ -110,7 +110,7 @@ function BilliardsAniMgr:createWordEffect(rootNode, nType)
     if spine then
         spine:setAnchorPoint(cc.p(0.5, 0.5))
         spine:setScale(1.5)
-        spine:setAnimation(0, "animation", true)
+        spine:setAnimation(0, "animation", false)
         spine:setPosition(cc.p(spineWord:getContentSize().width / 2, spineWord:getContentSize().height / 2))
         spineWord:addChild(spine)
         spine:setCascadeOpacityEnabled(false)
@@ -149,28 +149,34 @@ end
 --@ isEnabled 是否是可以点击状态,动画状态
 --@ m_MainLayer 游戏图层
 function BilliardsAniMgr:setSliderBarAni(isEnabled, m_MainLayer)
+    print(" setSliderBarAni ",isEnabled)
+    BilliardsAniMgr:setFineTurningAni(isEnabled, m_MainLayer)
     m_MainLayer.img_PowerBar:stopAllActions()
     local nodeWidth = m_MainLayer.node:getContentSize().width
     local childWidth = m_MainLayer.img_PowerBar:getContentSize().width
     if isEnabled then
-        local posX = 0 -(display.width - nodeWidth) / 2 - childWidth
-        if posX ~= m_MainLayer.img_PowerBar:getPositionX() then
-            m_MainLayer.img_PowerBar:setPositionX(posX + childWidth)
-            return
-        end
-        m_MainLayer.img_PowerBar:setPositionX(posX)
-        m_MainLayer.img_PowerBar:runAction(cc.MoveTo:create(0.5, cc.p(posX + childWidth, m_MainLayer.img_PowerBar:getPositionY())))
-    else
-        if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
-            return
-        end
-        local posX = 0 -(display.width - nodeWidth) / 2
+        local posX = 1136 +(display.width - nodeWidth) / 2
         if posX ~= m_MainLayer.img_PowerBar:getPositionX() then
             m_MainLayer.img_PowerBar:setPositionX(posX - childWidth)
             return
         end
+        m_MainLayer.slider_PowerBar:setTouchEnabled(true)
         m_MainLayer.img_PowerBar:setPositionX(posX)
         m_MainLayer.img_PowerBar:runAction(cc.MoveTo:create(0.5, cc.p(posX - childWidth, m_MainLayer.img_PowerBar:getPositionY())))
+    else
+--        if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
+--            return
+--        end
+        local posX = 1136 +(display.width - nodeWidth) / 2 - childWidth
+        if posX ~= m_MainLayer.img_PowerBar:getPositionX() then
+            m_MainLayer.img_PowerBar:setPositionX(posX + childWidth)
+            return
+        end
+        if EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
+            m_MainLayer.slider_PowerBar:setTouchEnabled(false)
+        end
+        m_MainLayer.img_PowerBar:setPositionX(posX)
+         m_MainLayer.img_PowerBar:runAction(cc.MoveTo:create(0.5, cc.p(posX + childWidth, m_MainLayer.img_PowerBar:getPositionY())))
     end
 end
 
@@ -182,24 +188,55 @@ function BilliardsAniMgr:setFineTurningAni(isEnabled, m_MainLayer)
     local nodeWidth = m_MainLayer.node:getContentSize().width
     local childWidth = m_MainLayer.layout_FineTurning:getContentSize().width
     if isEnabled then
-        local posX = 1136 +(display.width - nodeWidth) / 2 + childWidth
-        if posX ~= m_MainLayer.layout_FineTurning:getPositionX() then
-            m_MainLayer.layout_FineTurning:setPositionX(posX - childWidth)
-            return
-        end
-        m_MainLayer.layout_FineTurning:setPositionX(posX)
-        m_MainLayer.layout_FineTurning:runAction(cc.MoveTo:create(0.5, cc.p(posX - childWidth, m_MainLayer.layout_FineTurning:getPositionY())))
-    else
-        if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
-            return
-        end
-        local posX = 1136 +(display.width - nodeWidth) / 2
-        if posX ~= m_MainLayer.layout_FineTurning:getPositionX() then
-            m_MainLayer.layout_FineTurning:setPositionX(posX + childWidth)
-            return
-        end
+        local posX = 0 -(display.width - nodeWidth) / 2
+--        if posX ~= m_MainLayer.layout_FineTurning:getPositionX() then
+--            m_MainLayer.layout_FineTurning:setPositionX(posX + childWidth)
+--            return
+--        end
         m_MainLayer.layout_FineTurning:setPositionX(posX)
         m_MainLayer.layout_FineTurning:runAction(cc.MoveTo:create(0.5, cc.p(posX + childWidth, m_MainLayer.layout_FineTurning:getPositionY())))
+    else
+        local posX = 0 -(display.width - nodeWidth) / 2
+--        if posX ~= m_MainLayer.layout_FineTurning:getPositionX() then
+--            m_MainLayer.layout_FineTurning:setPositionX(posX - childWidth)
+--            return
+--        end
+        m_MainLayer.layout_FineTurning:setPositionX(posX+childWidth)
+        m_MainLayer.layout_FineTurning:runAction(cc.MoveTo:create(0.5, cc.p(posX - childWidth, m_MainLayer.layout_FineTurning:getPositionY())))
+    end
+end
+
+--比赛开始动画
+function BilliardsAniMgr:setGameStartAni(rootBg)
+    local spine = sp.SkeletonAnimation:create("gameBilliards/effect/bisaikaishi_tx.json", "gameBilliards/effect/bisaikaishi_tx.atlas", 1)
+    if spine then
+        spine:setAnchorPoint(cc.p(0.5, 0.5))
+        spine:setScale(1)
+        spine:setAnimation(0, "bisaikaishi", false)
+        spine:setPosition(cc.p(rootBg:getContentSize().width / 2, rootBg:getContentSize().height / 2+50))
+        spine:setCameraMask(cc.CameraFlag.USER2)
+        spine:setGlobalZOrder(100000)
+        rootBg:addChild(spine)
+    end
+end
+
+function BilliardsAniMgr:setGameOverAni(isWin, rootBg)
+    local spine
+    if isWin then
+        ccs.ArmatureDataManager:getInstance():addArmatureFileInfo("res/flash/yuan010.png", "res/flash/yuan010.plist", "res/flash/yuan01.ExportJson")
+        local spine = ccs.Armature:create("yuan01")
+        spine:setPosition(cc.p(display.cx, display.cy+50))
+        spine:setScale(3.0)
+        spine:setLocalZOrder(-1)
+        --spine:setCameraMask(cc.CameraFlag.USER2)
+        spine:getAnimation():play("Animation1")
+        rootBg:addChild(spine)
+    else
+        spine = sp.SkeletonAnimation:create("gameBilliards/effect/jiesuan_shibai.json", "gameBilliards/effect/jiesuan_shibai.atlas", 1)
+        spine:setAnimation(0, "jiesuan_shibai", true)
+        spine:setScale(0.5)
+        spine:setPosition(cc.p(rootBg:getContentSize().width / 2, rootBg:getContentSize().height / 2 + 180))
+        rootBg:addChild(spine)
     end
 end
 
