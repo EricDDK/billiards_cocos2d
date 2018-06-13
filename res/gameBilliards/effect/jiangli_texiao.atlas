@@ -1,0 +1,27 @@
+
+jiangli_texiao.png
+size: 1024,1024
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+ezezez_00
+  rotate: false
+  xy: 540, 577
+  size: 44, 47
+  orig: 44, 47
+  offset: 0, 0
+  index: -1
+guang
+  rotate: false
+  xy: 2, 80
+  size: 536, 544
+  orig: 536, 544
+  offset: 0, 0
+  index: -1
+xingxing
+  rotate: false
+  xy: 2, 2
+  size: 74, 76
+  orig: 74, 76
+  offset: 0, 0
+  index: -1
