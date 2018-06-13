@@ -141,7 +141,7 @@ function Cue:launchBall(_forcePercent, rootNode, rotateX, rotateY, otherX, other
         local unevenY =diffY * g_EightBallData.rotateForceRatio * _forcePercent * rotateY
         local prickStrokeX = 0.0
         local prickStrokeY = 0.0
-        Cue:sendHitWhiteBallMessage(percent, ballPosX, ballPosY, velocityX, velocityY, angularVelocity, unevenX, unevenY, prickStrokeX, prickStrokeY)
+        self:sendHitWhiteBallMessage(percent, ballPosX, ballPosY, velocityX, velocityY, angularVelocity, unevenX, unevenY, prickStrokeX, prickStrokeY)
     end
 end
 
@@ -149,6 +149,7 @@ end
 --@ event 服务器发来的力量数组
 --@ callback 帧同步开始的回调函数,回到mainlayer开始帧同步发送与接受处理
 function Cue:receiveLauchBall(event, callback)
+    print("receiveLauchBall  ",event.fWhiteBallRotate,event.fCueRotate)
     local function _hitWhiteBall()
         if self and not tolua.isnull(self) and m_RootBall and not tolua.isnull(m_RootBall) then
             self:setCueLineCircleVisible(false)
@@ -170,17 +171,19 @@ function Cue:receiveLauchBall(event, callback)
         _hitWhiteBall()
    -- 是对手击的球就播放动画，延迟击打，同步
     else
+        m_RootBall:setRotation(event.fWhiteBallRotate)
+        self:setRotation(event.fCueRotate)
         self:stopAllActions()
         local cueRotate = mathMgr:changeAngleTo0to360(self:getRotation())
         self:setRotation(cueRotate)
         local posX, posY = mathMgr:getCuePosByRotate(cueRotate, event.Percent)
         local radius = m_RootBall:getContentSize().width / 2
 
-        local func1 = cc.MoveTo:create(g_EightBallData.sendHitResultInterval, cc.p(radius + posX, radius + posY))
+        local func1 = cc.MoveTo:create(g_EightBallData.receiveHitWhiteBallInterval, cc.p(radius + posX, radius + posY))
         local func2 = cc.CallFunc:create( function()
             _hitWhiteBall()
         end )
-        self:runAction(cc.Sequence:create(func1, func2))
+        self:runAction(cc.Sequence:create(func1,func2))
     end
 end
 
@@ -233,7 +236,8 @@ function Cue:sendSetCueMessage(angle, rootNode,isEnded)
     if (mCanSendSetCueMessage or isEnded) and EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
         local requestData = {
             fAngle = tostring(angle),
-            UserID = player:getPlayerUserID()
+            UserID = player:getPlayerUserID(),
+            GameRound = EightBallGameManager:getGameRound(),
         }
         EBGameControl:requestEightBallCmd(g_EIGHTBALL_REG_SETCUEINFO,requestData)
         rootNode:runAction(cc.Sequence:create(cc.DelayTime:create(g_EightBallData.sendSetCueInterval), cc.CallFunc:create( function()
@@ -263,8 +267,15 @@ function Cue:sendHitWhiteBallMessage(percent,ballPosX,ballPosY,velocityX,velocit
         fPrickStrokeX = tostring(prickStrokeX),
         fPrickStrokeY = tostring(prickStrokeY),
         fAngularVelocity = tostring(angularVelocity),
+        fWhiteBallRotate = tostring(m_RootBall:getRotation()),
+        fCueRotate = tostring(self:getRotation()),
+        GameRound = EightBallGameManager:getGameRound(),
     }
     EBGameControl:requestEightBallCmd(g_EIGHTBALL_REG_HITWHITEBALL,requestData)
+end
+
+function Cue:onExit()
+    m_RootBall = nil
 end
 
 return Cue

@@ -1,5 +1,7 @@
 mathMgr = mathMgr or {}
 
+local reservedDigits = math.pow(0.1,g_EightBallData.ReservedDigit)
+
 function mathMgr:init()
     
 end
@@ -7,7 +9,7 @@ end
 --通用方法，保留小数位后数字
 function GetPreciseDecimal(num)
     if num then
-        return num - num % 0.00001
+        return num - num % reservedDigits
     end
     return 0
 end

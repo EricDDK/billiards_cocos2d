@@ -45,7 +45,7 @@ function EBGameControl:startGame()
 end
 
 --成功进入房间
-function EBGameControl:doInGameSuccess()
+function EBGameControl:doInRoomSuccess()
     local _Lay = display.getRunningScene():getChildByTag(2000)
     if _Lay then
         -- tool.closeLayerAni(_Lay.node,_Lay)
@@ -55,7 +55,8 @@ end
 
 --退出游戏处理
 function EBGameControl:leaveGame()
-    os.exit()
+    --EBGameControl:onExit()
+    --os.exit()
 end
 
 --处理白球进洞,放回原始位置
@@ -134,6 +135,7 @@ end
 --处理断线重连,只是同步一下所有信息
 function EBGameControl:dealGameResume(event)
     local array = { }
+    EightBallGameManager.setGameRound(event.GameRound)
     array.RountCount = event.RoundCount
     array.UserID = event.CurrentUserID
     array.FullColorUserID = event.FullColorBallUserID
@@ -152,7 +154,7 @@ function EBGameControl:dealGameResume(event)
         EBGameControl:dealWhiteBallInHole()
     end
     m_MainLayer.cue:setRotationOwn(0,m_MainLayer)
-    EightBallGameManager:setCanRefreshBallAni(true)  --设置可以刷新球3D特效
+    --EightBallGameManager:setCanRefreshBallAni(true)  --设置可以刷新球3D特效
     
     --定时器条
     local progressTimer1 = player:getPlayerUserID() == event.CurrentUserID and m_MainLayer.profressTimer1 or m_MainLayer.profressTimer2
@@ -243,7 +245,7 @@ function EBGameControl:dealTipBalls()
 
     local function checkVisible(pTipBall, index)
         ball = m_MainLayer.desk:getChildByTag(index)
-        if ball and ball:getBallState() == g_EightBallData.ballState.inHole then
+        if ball and (ball:getBallState() == g_EightBallData.ballState.inHole or ball:getPositionX() < 0 ) then
             pTipBall:setVisible(false)
         else
             pTipBall:setVisible(true)
@@ -385,25 +387,28 @@ function EBGameControl:setSuitCuePos()
     if EBGameControl:getGameState() == g_EightBallData.gameState.practise and EightBallGameManager:getCurrentUserID() == player:getPlayerUserID() then
         m_MainLayer.cue:setRotationOwn(0, m_MainLayer)
     else
+        if EightBallGameManager:getCurrentUserID() ~= player:getPlayerUserID() then
+            return
+        end
         local whiteBall = m_MainLayer.whiteBall
         m_MainLayer.cue:setRotationOwn(0, m_MainLayer)
         local ball
-        local suitBallDistance
-        local suitBallIndex
-        local myColor = EightBallGameManager:getMyColor()
+        local suitBallDistance  --合适球和白球的距离
+        local suitBallIndex  --合适的球的索引
+        local myColor = EightBallGameManager:getMyColor()  --获取我需要打的球的颜色索引 1是全色 2是半色 3是黑球 其他是随机
         local suitBallArray = { }
 
         local function getSuitBallIndex(i)
             ball = m_MainLayer.desk:getChildByTag(i)
             if ball and ball:getBallState() ~= g_EightBallData.ballState.inHole then
-                local _dis = mathMgr.getDistancePow2(whiteBall:getPositionX(), whiteBall:getPositionY(), ball:getPositionX(), ball:getPositionY())
+                local distance = mathMgr.getDistancePow2(whiteBall:getPositionX(), whiteBall:getPositionY(), ball:getPositionX(), ball:getPositionY())
                 if suitBallDistance then
-                    if suitBallDistance > _dis then
-                        suitBallDistance = _dis
+                    if suitBallDistance > distance then
+                        suitBallDistance = distance
                         suitBallIndex = i
                     end
                 else
-                    suitBallDistance = _dis
+                    suitBallDistance = distance
                     suitBallIndex = i
                 end
             end
@@ -424,11 +429,6 @@ function EBGameControl:setSuitCuePos()
             m_MainLayer.cue:sendSetCueMessage(rotate - m_MainLayer.whiteBall:getRotation(), m_MainLayer, true)
         end
 
-        ---------------------------------------------------------
-        ---- 测试代码
-        -- myColor = 1
-        ---------------------------------------------------------
-
         if myColor == 1 then
             for i = 1, 7 do
                 getSuitBallIndex(i)
@@ -442,14 +442,20 @@ function EBGameControl:setSuitCuePos()
             setSuitBall()
             return
         elseif myColor == 3 then
-            ball = m_MainLayer:getChildByTag(8)
+            ball = m_MainLayer.desk:getChildByTag(8)
             if ball and ball:getBallState() ~= g_EightBallData.ballState.inHole then
                 suitBallIndex = 8
                 setSuitBall()
                 return
             end
         else
-
+             for i = 1, 15 do
+                 if i ~= 8 then
+                     getSuitBallIndex(i)
+                 end
+             end
+             setSuitBall()
+             return
         end
     end
 end
@@ -458,6 +464,7 @@ local isMoved = false  --判断是否有移动
 local BeganRotate = 0  --判断开始时杆的角度
 local oldRotate = 0  --记录move的旧角度，为了转正确的度数，每次记录，下次在这个变量的基础上增加或者减少角度
 local isReverse = false  --判断点击的是杆子正面还是反向，方向不同
+local isTouchLayerBegan = false --判断快速点击
 --摆放杆的位置
 --@ pos 触摸点位置，worldSpace
 --@ isBegan 是否是开始点击事件
@@ -493,7 +500,7 @@ function EBGameControl:setCuePosByTouch(pos, isBegan, isEnd, angular)
         return
     end
     --touch is ended
-    if not isMoved and isEnd and oldRotate == 0 then
+    if (not isMoved and isEnd and oldRotate == 0) or (isEnd and isTouchLayerBegan) then
         local ballX, ballY
         BeganRotate = 0
         if m_MainLayer and m_MainLayer.whiteBall and not tolua.isnull(m_MainLayer.whiteBall) and m_MainLayer.whiteBall.getPosition then
@@ -590,6 +597,11 @@ function EBGameControl:onTouchBegan(touch, event)
     isTouchWhiteBall = false
 
     local fineTurningRect = m_MainLayer.layout_FineTurning:getBoundingBox()
+    
+    fineTurningRect.height = display.height
+    fineTurningRect.width = 120
+    fineTurningRect.y = 0
+
     if cc.rectContainsPoint(fineTurningRect, cc.p(curPos.x, curPos.y)) then
         curFineTurningPosY = m_MainLayer.panel_FineTurning:convertToNodeSpace(curPos).y
         return true
@@ -600,6 +612,13 @@ function EBGameControl:onTouchBegan(touch, event)
     EBGameControl:getGameState() == g_EightBallData.gameState.setWhite or
     EBGameControl:getGameState() == g_EightBallData.gameState.restart then
         local whiteBallRect = m_MainLayer.whiteBall:getBoundingBox()
+
+        --扩大搜索范围
+        whiteBallRect.width = whiteBallRect.width * 4
+        whiteBallRect.height = whiteBallRect.height * 4
+        whiteBallRect.x = whiteBallRect.x - whiteBallRect.width/4
+        whiteBallRect.y = whiteBallRect.y - whiteBallRect.height/4
+
         local curPos = m_MainLayer.desk:convertToNodeSpace(touch:getLocation())
         if cc.rectContainsPoint(whiteBallRect, cc.p(curPos.x, curPos.y)) then
             isTouchWhiteBall = true
@@ -607,6 +626,13 @@ function EBGameControl:onTouchBegan(touch, event)
             return true
         end
     end
+
+    --判断快速点击的大角度旋转
+    isTouchLayerBegan = true
+    m_MainLayer.desk:stopAllActions()
+    m_MainLayer.desk:runAction(cc.Sequence:create(cc.DelayTime:create(0.05),cc.CallFunc:create(function()
+        isTouchLayerBegan = false
+    end)))
 
     if EBGameControl:getGameState() == g_EightBallData.gameState.waiting or EBGameControl:getGameState() == g_EightBallData.gameState.hitBall
     or EBGameControl:getGameState() == g_EightBallData.gameState.practise or EBGameControl:getGameState() == g_EightBallData.gameState.setWhite then
@@ -623,6 +649,11 @@ function EBGameControl:onTouchEnded(touch, event)
         return true
     end
     local fineTurningRect = m_MainLayer.layout_FineTurning:getBoundingBox()
+
+    fineTurningRect.height = display.height
+    fineTurningRect.width = 120
+    fineTurningRect.y = 0
+
     local curPos = m_MainLayer.node:convertToNodeSpace(touch:getLocation())
     if cc.rectContainsPoint(fineTurningRect, cc.p(curPos.x, curPos.y)) then
         return true
@@ -682,6 +713,11 @@ function EBGameControl:onTouchMoved(touch, event)
         return true
     end
     local fineTurningRect = m_MainLayer.layout_FineTurning:getBoundingBox()
+
+    fineTurningRect.height = display.height
+    fineTurningRect.width = 120
+    fineTurningRect.y = 0
+
     local curPos = m_MainLayer.node:convertToNodeSpace(touch:getLocation())
     if cc.rectContainsPoint(fineTurningRect, cc.p(curPos.x, curPos.y)) then
         local _pos = m_MainLayer.panel_FineTurning:convertToNodeSpace(curPos)
@@ -807,8 +843,10 @@ function EBGameControl:sendHitBallsResult(currentUserID)
             CollisionBorderCount = _processResult.collisionBorderCount,
             FirstCollisionIndex = _processResult.firstCollisionIndex,
             FirstInHoleBall = _processResult.firstInHoleBall,
+            GameRound = EightBallGameManager:getGameRound(),
         }
         EBGameControl:requestEightBallCmd(g_EIGHTBALL_REQ_HITBALLRESULTREQ, requestData)
+        EightBallGameManager:setCanRefreshBallAni(false)
     end
 end
 
@@ -816,6 +854,14 @@ end
 function EBGameControl:requestEightBallCmd(methodID,requestData)
     if EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
         ClientNetManager.getInstance():requestCmd(methodID, requestData, G_ProtocolType.EIGHTBALL)
+    end
+end
+
+function EBGameControl:onExit()
+    if m_MainLayer and not tolua.isnull(m_MainLayer) then
+        m_MainLayer.cue:onExit()
+        m_MainLayer:removeFromParent()
+        m_MainLayer = nil
     end
 end
 

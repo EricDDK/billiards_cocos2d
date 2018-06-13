@@ -123,7 +123,7 @@ end
 --袋中球碰撞
 function PhyControl:dealInHoleBallCollision(ballA,ballB,desk)
     if ballA and ballB and desk then
-        if ballA:getPositionY() < 480 and ballA:getPositionX() < 0 and ballB:getPositionY() < 480 and ballB:getPositionX() < 0 then
+        if ballA:getPositionY() < 475 and ballA:getPositionX() < -30 and ballB:getPositionY() < 475 and ballB:getPositionX() < -30 then
             ballA:resetForceAndEffect()
             ballB:resetForceAndEffect()
         end

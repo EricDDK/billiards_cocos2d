@@ -3,6 +3,7 @@ local EightBall = class("EightBall", BallBase)
 
 -- 保存球状态
 EightBall.mBallState = g_EightBallData.ballState.stop
+local reservedDigits = "%.".. g_EightBallData.ReservedDigit .."f"
 
 -- 调整高光
 function EightBall:adjustHighLight()
@@ -104,7 +105,7 @@ function EightBall:dealBallInBag()
     self:resetForceAndEffect()
     self:setBallState(g_EightBallData.ballState.inHole)
     self:setPosition(g_EightBallData.inBagPos)
-    self:getPhysicsBody():applyForce(cc.p(-300, -300), cc.p(0, 0))
+    self:getPhysicsBody():applyForce(cc.p(-1000000, -1000000), cc.p(0, 0))
 end
 
 -- 重置球
@@ -300,6 +301,10 @@ function EightBall:whiteBallTouchEnded(rootNode,pos,isReceive,isLimitedPos)
     local forbidden = self:getChildByTag(g_EightBallData.g_Border_Tag.forbidden)
     forbidden:setVisible(false)
 
+    --这里复杂，如果不违法放置白球，发送当前合法位置消息
+    --如果违法放置白球，检测是否是边界外，
+    --边界外的停止在边界上
+    --边界内的就是和其他球重合，立刻放回原位，再发送消息
     if mathMgr:checkBallLocationIsLegal(rootNode,pos,self) then
         if isReceive then
             self:setPosition(cc.p(pos.x,pos.y))
@@ -309,7 +314,13 @@ function EightBall:whiteBallTouchEnded(rootNode,pos,isReceive,isLimitedPos)
             self:sendSetWhiteBallMessage(pos.x,pos.y,rootNode,true)
         end
     else
-        self:sendSetWhiteBallMessage(self:getPositionX(),self:getPositionY(),rootNode,true)
+        if mathMgr:checkBallLocationIsOut(rootNode, pos, self) then
+            self:sendSetWhiteBallMessage(self:getPositionX(),self:getPositionY(),rootNode,true)
+        else
+            self:setPosition(cc.p(oldWhiteBallPos.x,oldWhiteBallPos.y))
+            self:sendSetWhiteBallMessage(self:getPositionX(),self:getPositionY(),rootNode,true)
+        end
+        --self:sendSetWhiteBallMessage(self:getPositionX(),self:getPositionY(),rootNode,true)
         --self:setPosition(cc.p(oldWhiteBallPos.x,oldWhiteBallPos.y))
     end
 end
@@ -358,9 +369,10 @@ function EightBall:sendSetWhiteBallMessage(posX,posY, rootNode,isEnded)
         local requestData = {
             fPositionX = tostring(posX),
             fPositionY = tostring(posY),
-            UserID = player:getPlayerUserID()
+            UserID = player:getPlayerUserID(),
+            GameRound = EightBallGameManager:getGameRound(),
         }
-        dump(requestData)
+        --dump(requestData)
         EBGameControl:requestEightBallCmd(g_EIGHTBALL_REG_SETWHITEBALL,requestData)
         rootNode:runAction(cc.Sequence:create(cc.DelayTime:create(g_EightBallData.sendSetWhiteBallInterval), cc.CallFunc:create( function()
             mCanSendSetWhiteBallMessage = true
@@ -400,29 +412,16 @@ function EightBall:getBallSyncState(syncArray)
     -- 保留小数点后5位
     table.insert(syncArray,{
         Tag = self:getTag(),
-        fPositionX = string.format("%.5f", _positionX),
-        fPositionY = string.format("%.5f", _positionY),
-        fVelocityX = string.format("%.5f", _velocity.x),
-        fVelocityY = string.format("%.5f", _velocity.y),
+        fPositionX = string.format(reservedDigits, _positionX),
+        fPositionY = string.format(reservedDigits, _positionY),
+        fVelocityX = string.format(reservedDigits, _velocity.x),
+        fVelocityY = string.format(reservedDigits, _velocity.y),
         -- fAngularVelocity = string.format("%.5f", _angularVelocity),
         -- fUnevenBarsForceX = string.format("%.5f", _unevenBarsForce.x),
         -- fUnevenBarsForceY = string.format("%.5f", _unevenBarsForce.y),
         -- fPrickStrokeForceX = string.format("%.5f", _prickStrokeForce.x),
         -- fPrickStrokeForceY = string.format("%.5f", _prickStrokeForce.y),
     })
-    
-    -- return {
-    --     Tag = self:getTag(),
-    --     fPositionX = string.format("%.5f", _positionX),
-    --     fPositionY = string.format("%.5f", _positionY),
-    --     fVelocityX = string.format("%.5f", _velocity.x),
-    --     fVelocityY = string.format("%.5f", _velocity.y),
-    --     -- fAngularVelocity = string.format("%.5f", _angularVelocity),
-    --     -- fUnevenBarsForceX = string.format("%.5f", _unevenBarsForce.x),
-    --     -- fUnevenBarsForceY = string.format("%.5f", _unevenBarsForce.y),
-    --     -- fPrickStrokeForceX = string.format("%.5f", _prickStrokeForce.x),
-    --     -- fPrickStrokeForceY = string.format("%.5f", _prickStrokeForce.y),
-    -- }
 end
 
 -- 收到服务器同步的结果消息，同步球的所有位置
@@ -453,15 +452,15 @@ function EightBall:getBallsResultState()
     end
     --保留小数点后5位
     return {
-        fPositionX = string.format("%.5f", _positionX),
-        fPositionY = string.format("%.5f", _positionY),
-        fVelocityX = string.format("%.5f", 0),
-        fVelocityY = string.format("%.5f", 0),
-        fAngularVelocity = string.format("%.5f", angularVelocity),
-        fUnevenBarsForceX = string.format("%.5f", 0),
-        fUnevenBarsForceY = string.format("%.5f", 0),
-        fPrickStrokeForceX = string.format("%.5f", 0),
-        fPrickStrokeForceY = string.format("%.5f", 0),
+        fPositionX = string.format(reservedDigits, _positionX),
+        fPositionY = string.format(reservedDigits, _positionY),
+        fVelocityX = string.format(reservedDigits, 0),
+        fVelocityY = string.format(reservedDigits, 0),
+        fAngularVelocity = string.format(reservedDigits, angularVelocity),
+        fUnevenBarsForceX = string.format(reservedDigits, 0),
+        fUnevenBarsForceY = string.format(reservedDigits, 0),
+        fPrickStrokeForceX = string.format(reservedDigits, 0),
+        fPrickStrokeForceY = string.format(reservedDigits, 0),
     }
 end
 

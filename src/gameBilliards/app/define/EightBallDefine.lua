@@ -1,10 +1,10 @@
 local EightBallDefine = {}
 
-EightBallDefine.netSynchronizationRate                  = 0.05  --网络帧同步的间隔时间（const）
+EightBallDefine.netSynchronizationRate                  = 0.1  --网络帧同步的间隔时间（const）
 
 ----------------------------------------------------------------------------------------------------------
 
-local ballDensity                                       = 0  --球体密度
+local ballDensity                                       = 2.7  --球体密度
 
 local ballRestiution                                    = 0.95  --球体弹性(0-1)
 
@@ -26,7 +26,7 @@ EightBallDefine.ballDoubleDampingValue                  = 150*150  --球体速�
 
 EightBallDefine.ballAngularDamping                      = 1  --球体旋转阻尼,旋转的阻力
 
-EightBallDefine.ballRollingRate                         = 10    --球体3d滚动动画的快慢,越大是滚动1米需要的圈数越小(数值越大，滚动速度越慢)(动画速度)
+EightBallDefine.ballRollingRate                         = 14    --球体3d滚动动画的快慢,越大是滚动1米需要的圈数越小(数值越大，滚动速度越慢)(动画速度)
 
 ----------------------------------------------------------------------------------------------------------
 
@@ -38,13 +38,13 @@ local borderFriction                                    = 0.5  --边界摩擦力
 
 ----------------------------------------------------------------------------------------------------------
 
-EightBallDefine.lineSpeedRatio                          = 6  --直线瞬间力量系数
+EightBallDefine.lineSpeedRatio                          = 12000  --直线瞬间力量系数
 
 EightBallDefine.lineForceRatio                          = 5  --直线击打力量系数，越大力量越大
 
-EightBallDefine.rotateForceRatio                        = 5  --高低干力量系数，越大旋转越激烈
+EightBallDefine.rotateForceRatio                        = 10000  --高低干力量系数，越大旋转越激烈
 
-EightBallDefine.leftRightForceRatio                     = 200  --左右塞的力量系数
+EightBallDefine.leftRightForceRatio                     = 5000  --左右塞的力量系数
 
 EightBallDefine.prickForceRatio                         = 10  --扎杆的旋转强度，越大旋转越强烈(弧线球)
 
@@ -54,7 +54,9 @@ EightBallDefine.isDebug                                 = false  --调试模式�
 
 local Gravity                                           = -9.8  --重力 （const）
 
-EightBallDefine.freshCount                              = 2  --刷新频率const，越高增加精度(莫动)，越高越卡，每秒检测次数 （const）
+EightBallDefine.ReservedDigit                           = 10  --精确到小数第几位
+
+EightBallDefine.freshCount                              = 3  --刷新频率const，越高增加精度(莫动)，越高越卡，每秒检测次数 （const）
 
 EightBallDefine.screenRefreshRate                       = EightBallDefine.freshCount*60.0  --勿动，屏幕帧率，现在是5*60=300 （const）
 
@@ -79,7 +81,7 @@ EightBallDefine.sendSetCueInterval                      = 0.5  --发送重置杆
 
 EightBallDefine.sendHitResultInterval                   = 0.5  --发送击球结果消息间隔
 
-EightBallDefine.receiveHitWhiteBall                     = 0.5  --收到击球信息后击打延迟
+EightBallDefine.receiveHitWhiteBallInterval             = 1  --收到击球信息后击打延迟
 
 EightBallDefine.operateTimer                            = 25   --定时器间隔
 

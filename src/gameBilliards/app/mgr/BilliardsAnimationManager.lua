@@ -151,6 +151,7 @@ end
 function BilliardsAniMgr:setSliderBarAni(isEnabled, m_MainLayer)
     print(" setSliderBarAni ",isEnabled)
     BilliardsAniMgr:setFineTurningAni(isEnabled, m_MainLayer)
+    m_MainLayer.slider_View:setVisible(false)
     m_MainLayer.img_PowerBar:stopAllActions()
     local nodeWidth = m_MainLayer.node:getContentSize().width
     local childWidth = m_MainLayer.img_PowerBar:getContentSize().width

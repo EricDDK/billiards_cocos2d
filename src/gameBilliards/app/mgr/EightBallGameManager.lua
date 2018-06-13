@@ -3,6 +3,7 @@ EightBallGameManager = EightBallGameManager or {}
 local mCurrentUserID                    = -1    -- 当前可操作userid
 local mFullColorUserID                  = -1    -- 击打全色球的userid
 local mHalfColorUserID                  = -1    -- 击打半色球的userid
+local mGameRound                        = 0     -- 和服务器保持一致的轮次索引
 
 --获取是不是我击球
 function EightBallGameManager:returnIsMyOperate()
@@ -195,6 +196,7 @@ function EightBallGameManager:syncHitResult(rootNode, isResume)
     end
 
     EightBallGameManager:setCurrentUserID(ballsResultArray.UserID)
+
     print("this round hit ball userid = ", ballsResultArray.UserID)
     if ballsResultArray.UserID == player:getPlayerUserID() then
         -- 我的回合
@@ -279,6 +281,7 @@ function EightBallGameManager:syncHitResult(rootNode, isResume)
         end
     end
     ballsResultArray = { }
+    EightBallGameManager:setCanRefreshBallAni(false)
 end
 
 
@@ -336,6 +339,16 @@ function EightBallGameManager:getMyColor()
         myColor = g_EightBallData.HitColor.none
     end
     return myColor
+end
+
+
+--游戏轮次索引
+function EightBallGameManager:setGameRound(args)
+    mGameRound = args
+end
+
+function EightBallGameManager:getGameRound()
+    return mGameRound
 end
 
 
@@ -398,6 +411,7 @@ function EightBallGameManager:initialize()
     mCanOperate = true
     mLinkCount = 0
     mCanRefreshBallAni = false
+    mGameRound = 0
 end
 
 local effectSwitch = {

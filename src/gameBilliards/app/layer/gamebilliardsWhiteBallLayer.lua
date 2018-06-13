@@ -38,6 +38,8 @@ function gamebilliardsWhiteBallLayer:initView()
         self.redPoint:setPosition(cc.p(( _value * m_posX + _value+35 ),( _value * m_posY + _value+35 )))
         self.backGround = self.node:getChildByTag(3)
     end
+    self.node:setPositionY(0-(display.height-self.node:getContentSize().height))
+    self.node:runAction(cc.MoveTo:create(0.3,cc.p(display.cx,display.cy)))
 end
 
 function gamebilliardsWhiteBallLayer:registerTouchHandler()
