@@ -52,17 +52,34 @@ function Cue:ctor(_root)
     self.CircleShadow:setPosition(cc.p(pos,pos))
     self.circleCheck:addChild(self.CircleShadow)
 
+    self.whiteBallLine = ccui.Scale9Sprite:create("gameBilliards/eightBall/eightBall_ShortLine.png")
+    self.whiteBallLine:setAnchorPoint(cc.p(0,0.5))
+    self.whiteBallLine:setTag(g_EightBallData.g_Border_Tag.whiteBallLine)
+    self.whiteBallLine:setPosition(self.spriteLine:getContentSize().width,self.spriteLine:getContentSize().height/2)
+    self.spriteLine:addChild(self.whiteBallLine)
+
+    self.colorBallLine = ccui.Scale9Sprite:create("gameBilliards/eightBall/eightBall_ShortLine.png")
+    self.colorBallLine:setAnchorPoint(cc.p(0,0.5))
+    self.colorBallLine:setTag(g_EightBallData.g_Border_Tag.colorBallLine)
+    self.colorBallLine:setPosition(self.spriteLine:getContentSize().width,self.spriteLine:getContentSize().height/2)
+    self.spriteLine:addChild(self.colorBallLine)
+
     -------------------------------------------------------------
     self:setGlobalZOrder(1000)
     self:setCameraMask(cc.CameraFlag.USER2)
-    --self.spriteLine:setGlobalZOrder(1000)  --测试用
+    --self.spriteLine:setGlobalZOrder(1000)
     --self.spriteLine:setCameraMask(cc.CameraFlag.USER2)
-    cueCheckBorder:setGlobalZOrder(1000)  --测试用
+    cueCheckBorder:setGlobalZOrder(1000)
     cueCheckBorder:setCameraMask(cc.CameraFlag.USER2)
-    self.circleCheck:setGlobalZOrder(1000)  --测试用
+    self.circleCheck:setGlobalZOrder(1000)
     self.circleCheck:setCameraMask(cc.CameraFlag.USER2)
-    self.CircleShadow:setGlobalZOrder(1000)  --测试用
+    self.CircleShadow:setGlobalZOrder(1000)
     self.CircleShadow:setCameraMask(cc.CameraFlag.USER2)
+    self.whiteBallLine:setGlobalZOrder(1000)
+    self.whiteBallLine:setCameraMask(cc.CameraFlag.USER2)
+    self.colorBallLine:setGlobalZOrder(1000)
+    self.colorBallLine:setCameraMask(cc.CameraFlag.USER2)
+
     -------------------------------------------------------------
 
     mCanSendSetCueMessage = true  --重置成员函数
@@ -101,6 +118,7 @@ end
 --@ rotateY 高低杆
 --@ other 其他的力，待加,预留
 function Cue:launchBall(_forcePercent, rootNode, rotateX, rotateY, otherX, otherY)
+    m_RootBall:clearWhiteBallView()
     self:setCueLineCircleVisible(false)
     self:resetPos()
     _forcePercent = _forcePercent / 100
@@ -114,6 +132,7 @@ function Cue:launchBall(_forcePercent, rootNode, rotateX, rotateY, otherX, other
     
     --练习模式
     if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
+        m_RootBall:setBallState(g_EightBallData.ballState.run)  --击球白球设置为run,放置定时器开跑白球就是stop导致直接结束
         m_RootBall:getPhysicsBody():applyImpulse(
         cc.p(
         diffX * g_EightBallData.lineSpeedRatio * _forcePercent,
@@ -129,6 +148,11 @@ function Cue:launchBall(_forcePercent, rootNode, rotateX, rotateY, otherX, other
         ), 
         cc.p(0, 0)
         )
+        m_RootBall:runAction(cc.Sequence:create(cc.DelayTime:create(0.5), cc.CallFunc:create( function()
+            if m_RootBall and not tolua.isnull(m_RootBall) then
+                m_RootBall:getPhysicsBody():resetForces()
+            end
+        end )))
     --比赛中
     else
         local percent = _forcePercent*100
@@ -155,15 +179,21 @@ function Cue:receiveLauchBall(event, callback)
             self:setCueLineCircleVisible(false)
             self:resetPos()
             EightBallGameManager:setCanRefreshBallAni(true)
+            m_RootBall:setBallState(g_EightBallData.ballState.run)  --击球白球设置为run,放置定时器开跑白球就是stop导致直接结束
             m_RootBall:setPosition(cc.p(event.fPositionX, event.fPositionY))
             m_RootBall:getPhysicsBody():applyImpulse(cc.p(event.fVelocityX, event.fVelocityY))
             m_RootBall:getPhysicsBody():setAngularVelocity(event.fAngularVelocity)
             m_RootBall:getPhysicsBody():applyForce(cc.p(event.fUnevenBarsX, event.fUnevenBarsY), cc.p(0, 0))
             m_RootBall:setWhiteBallContinuesForce(cc.p(event.fUnevenBarsX, event.fUnevenBarsY))
-            EightBallGameManager:playEffect(g_EightBallData.sound.cue)
+            EightBallGameManager:playEffectByIndex(g_EightBallData.sound.cue)
             if callback then
                 callback()-- 击球后就回调开始帧同步
             end
+            m_RootBall:runAction(cc.Sequence:create(cc.DelayTime:create(0.5), cc.CallFunc:create( function()
+                if m_RootBall and not tolua.isnull(m_RootBall) then
+                    m_RootBall:getPhysicsBody():resetForces()
+                end
+            end )))
         end
     end
     -- 是我自己开的球立刻击球
@@ -209,6 +239,9 @@ end
 --设置角度
 --@rotate 旋转的角度
 function Cue:setRotationOwn(rotate,rootNode)
+    if rotate == 0 then
+        rotate = 0.1
+    end
     self:setRotation(rotate)
     if self.spriteLine then
         self.spriteLine:setRotation(rotate)
@@ -220,6 +253,7 @@ end
 -- 是否看得见瞄准线，圆球线，路径检测线
 -- isVisible bool 是否看得见
 function Cue:setCueLineCircleVisible(isVisible)
+    --_print("set cue line circle visible = ",isVisible,debug.traceback())
     if self.spriteLine then
         self.spriteLine:setVisible(isVisible)
     end
@@ -268,13 +302,19 @@ function Cue:sendHitWhiteBallMessage(percent,ballPosX,ballPosY,velocityX,velocit
         fPrickStrokeY = tostring(prickStrokeY),
         fAngularVelocity = tostring(angularVelocity),
         fWhiteBallRotate = tostring(m_RootBall:getRotation()),
-        fCueRotate = tostring(self:getRotation()),
         GameRound = EightBallGameManager:getGameRound(),
+        fCueRotate = tostring(self:getRotation()),
     }
+    print("round = ",requestData.GameRound,EightBallGameManager:getGameRound())
+    dump(requestData)
     EBGameControl:requestEightBallCmd(g_EIGHTBALL_REG_HITWHITEBALL,requestData)
 end
 
 function Cue:onExit()
+    if self and not tolua.isnull(self) then
+        self:removeFromParent()
+        self = nil
+    end
     m_RootBall = nil
 end
 

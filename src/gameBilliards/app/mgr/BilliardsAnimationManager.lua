@@ -1,5 +1,41 @@
 BilliardsAniMgr = BilliardsAniMgr or { }
 
+-- 创建人物当前轮次动画
+-- root是人物框
+function BilliardsAniMgr:createUserFrameAni(rootNode, isRestart)
+    local function removeAni(sp)
+        if sp and not tolua.isnull(sp) then
+            sp:stopAllActions()
+            sp:removeFromParent()
+            sp = nil
+        end
+    end
+    if isRestart then
+        removeAni(rootNode.img_User1:getChildByTag(1000))
+        removeAni(rootNode.img_User2:getChildByTag(1000))
+        rootNode.blackBg:setVisible(false)
+        return
+    end
+    if EightBallGameManager:getCurrentUserID() == -1 or EBGameControl:getGameState() == g_EightBallData.gameState.practise then
+        return
+    end
+    local root = player:getPlayerUserID() == EightBallGameManager:getCurrentUserID() and rootNode.img_User1 or rootNode.img_User2
+    local blackBgRoot = player:getPlayerUserID() == EightBallGameManager:getCurrentUserID() and rootNode.img_User2 or rootNode.img_User1
+    local msp = root:getChildByTag(1000)
+    if msp then
+        --removeAni(msp)
+        return
+    end
+    rootNode.blackBg:setPositionX(blackBgRoot:getPositionX())
+    rootNode.blackBg:setVisible(true)
+    msp = cc.Sprite:create()
+    local frames = display.newFrames("userFrame%02d.png", 1, 90)
+    local animation = display.newAnimation(frames, 0.03)
+    msp:runAction(cc.RepeatForever:create(cc.Animate:create(animation)))
+    msp:setPosition(cc.p(root:getContentSize().width / 2, root:getContentSize().height / 2))
+    msp:setTag(1000)
+    root:addChild(msp)
+end
 
 -- 创建连杆动画
 -- @ rootNode 游戏layer
@@ -25,6 +61,7 @@ function BilliardsAniMgr:createLinkEffect(rootNode, nLinkCount)
         spine:setAnchorPoint(cc.p(0.5, 0.5))
         spine:setScale(1.5)
         spine:setAnimation(0, "animation", false)
+        sprite:setTag(g_EightBallData.g_Border_Tag.linkSpine)
         sprite:addChild(spine)
         spine:setCascadeOpacityEnabled(false)
         spine:setLocalZOrder(5)
@@ -90,6 +127,31 @@ function BilliardsAniMgr:createLinkEffect(rootNode, nLinkCount)
             sprite = nil
         end
     end )))
+end
+
+-- 力量条数值显示
+-- param@ root 三个数字的父节点
+-- param@ num 力量大小
+function BilliardsAniMgr:createPowerNumEffet(root, num)
+    local hundred = math.modf(num / 100)
+    local ten = math.modf(num / 10)%10
+    local one = num % 10
+    if hundred == 0 then
+        root:getChildByName("num1"):setVisible(false)
+        if ten == 0 or ten == 10 then
+            root:getChildByName("num2"):setVisible(false)
+        else
+            root:getChildByName("num2"):loadTexture("img_num_" .. ten .. ".png", UI_TEX_TYPE_PLIST)
+            root:getChildByName("num2"):setVisible(true)
+        end
+    else
+        root:getChildByName("num1"):loadTexture("img_num_" .. hundred .. ".png", UI_TEX_TYPE_PLIST)
+        root:getChildByName("num1"):setVisible(true)
+        root:getChildByName("num2"):loadTexture("img_num_" .. ten .. ".png", UI_TEX_TYPE_PLIST)
+        root:getChildByName("num2"):setVisible(true)
+    end
+    root:getChildByName("num3"):loadTexture("img_num_" .. one .. ".png", UI_TEX_TYPE_PLIST)
+    root:getChildByName("num3"):setVisible(true)
 end
 
 --  创建屏幕中间提示信息(该你击球，你将击打花色求等)
@@ -243,6 +305,22 @@ end
 
 -- 提示框信息
 function BilliardsAniMgr:setGameTips(m_MainLayer,result)
+    --倒计时
+    local timer = m_MainLayer.tip:getChildByTag(g_EightBallData.g_Border_Tag.tipsTimer)
+    if not timer then
+        timer = ccui.ImageView:create()
+        timer:setTag(g_EightBallData.g_Border_Tag.tipsTimer)
+        local size = m_MainLayer.tip:getContentSize()
+        timer:setPositionX(timer:getPositionX() + 50)
+        --timer:setPosition(cc.p(size.width/2,size.height/2))
+        m_MainLayer.tip:addChild(timer)
+        local word = cc.Sprite:create("gameBilliards/eightBall/eightBall_Word_Timer.png")
+        word:setPosition(cc.p(-75,40))
+        timer:addChild(word)
+    end
+    timer:stopAllActions()
+    timer:setVisible(false)
+
     local currentUserID = EightBallGameManager:getCurrentUserID()
     local panel_Tip = m_MainLayer.panel_Tip
     if result == g_EightBallData.gameRound.foul then
@@ -254,7 +332,7 @@ function BilliardsAniMgr:setGameTips(m_MainLayer,result)
             return
         end
     elseif result == g_EightBallData.gameRound.keep then
-        if (currentUserID ~= -1 and currentUserID ~= player:getPlayerUserID()) or EightBallGameManager:getColorUserID() <= 0 then
+        if (currentUserID ~= -1 and currentUserID ~= player:getPlayerUserID()) --[[or EightBallGameManager:getColorUserID() <= 0]] then
             m_MainLayer.tip:setString("继续击球")
         else
             return
@@ -263,6 +341,38 @@ function BilliardsAniMgr:setGameTips(m_MainLayer,result)
         m_MainLayer.tip:setString("正常击球，交换击球权")
     elseif result == g_EightBallData.gameRound.restart then
         m_MainLayer.tip:setString("首杆进黑八，重新开始本局")
+    elseif result == g_EightBallData.gameRound.countdown then
+        if EightBallGameManager:getCurrentUserID() ~= player:getPlayerUserID() then
+            return
+        end
+        timer:setVisible(true)
+        m_MainLayer.tip:setString("")
+        timer:setScale(0.9)
+        timer:loadTexture("img_num_3.png",UI_TEX_TYPE_PLIST)
+        timer:runAction(cc.Sequence:create(
+            cc.DelayTime:create(1),
+            cc.CallFunc:create(function ()
+                timer:loadTexture("img_num_2.png",UI_TEX_TYPE_PLIST)
+            end),
+            cc.DelayTime:create(1),
+            cc.CallFunc:create(function ()
+                timer:loadTexture("img_num_1.png",UI_TEX_TYPE_PLIST)
+            end),
+            cc.DelayTime:create(1),
+            cc.CallFunc:create(function ()
+                timer:loadTexture("img_num_0.png",UI_TEX_TYPE_PLIST)
+            end),
+            cc.DelayTime:create(1),
+            cc.CallFunc:create(function ()
+                if timer and not tolua.isnull(timer) then
+                    timer:stopAllActions()
+                    timer:setVisible(false)
+                    panel_Tip:runAction(cc.MoveTo:create(0.3, cc.p(display.cx, 0 -(display.height - m_MainLayer.node:getContentSize().height) / 2)))
+                end
+            end)
+        ))
+        panel_Tip:runAction(cc.MoveTo:create(0.3, cc.p(display.cx, 0 -(display.height - m_MainLayer.node:getContentSize().height) / 2 + panel_Tip:getContentSize().height)))
+        return
     else
         m_MainLayer.tip:setString("")
         panel_Tip:setPosition(cc.p(display.cx, 0 -(display.height - m_MainLayer.node:getContentSize().height) / 2))
@@ -302,22 +412,56 @@ end
 
 -- 设置头像框的倒计时
 function BilliardsAniMgr:setHeadTimerAni(Bg, leftTime, callback)
-    if EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
+    --if EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
+        local size = Bg:getContentSize()
         local ProgressTimerAction = Bg:getChildByTag(g_EightBallData.g_Border_Tag.timer)
         if not ProgressTimerAction then
-            local sprite = cc.Sprite:createWithSpriteFrameName("eightBall_TimeProgress.png")
+            local sprite = cc.Sprite:create("gameBilliards/eightBall/eightBall_ProgressTimer_Bg.png")
             ProgressTimerAction = cc.ProgressTimer:create(sprite)
             ProgressTimerAction:setType(cc.PROGRESS_TIMER_TYPE_RADIAL)
             ProgressTimerAction:setPosition(cc.p(Bg:getContentSize().width / 2, Bg:getContentSize().height / 2))
             ProgressTimerAction:setAnchorPoint(cc.p(0.5, 0.5))
-            ProgressTimerAction:setReverseDirection(false)
+            ProgressTimerAction:setReverseDirection(true)
             ProgressTimerAction:setTag(g_EightBallData.g_Border_Tag.timer)
             Bg:addChild(ProgressTimerAction)
         end
 
+        local particle = Bg:getChildByTag(g_EightBallData.g_Border_Tag.clockParticle)
+        if not particle then
+            particle = cc.ParticleSystemQuad:create("gameBilliards/effect/ClockMove.plist")
+            particle:setLifeVar(2)
+		    particle:setDuration(-1)
+            particle:setTag(g_EightBallData.g_Border_Tag.clockParticle)
+		    Bg:addChild(particle)
+        end
+        particle:setPosition(cc.p(size.width /2 ,size.height-2))
+	    particle:setVisible(true)
+	    particle:stopAllActions()
+
+        local seq = cc.Sequence:create(
+			cc.MoveBy:create(leftTime / 8 , cc.p(size.width /2, 0)),
+			cc.MoveBy:create(leftTime / 4 , cc.p(0, -size.height+2)),
+			cc.MoveBy:create(leftTime / 4 , cc.p(-size.width+2, 0)),
+			cc.MoveBy:create(leftTime / 4 , cc.p(0, size.height-2)),
+            cc.CallFunc:create(function ( ... )
+				--最后3秒调用
+                print("last 3 seconds !")
+                --amgr.playViberate(0.3)
+                if callback then
+                    callback()
+                end
+			end),
+			cc.MoveBy:create(leftTime / 8 , cc.p(size.width /2-1, 0)),
+			cc.CallFunc:create(function ( ... )
+				particle:setVisible(false)
+			end)
+		)
+	    particle:runAction(seq)
+
         if leftTime <= 0 then
             ProgressTimerAction:setPercentage(0)
             ProgressTimerAction:stopAllActions()
+            particle:setVisible(false)
             return
         end
 
@@ -327,13 +471,11 @@ function BilliardsAniMgr:setHeadTimerAni(Bg, leftTime, callback)
         end
         local progressTo = cc.ProgressFromTo:create(leftTime, wholeTime, 0)
         local clear = cc.CallFunc:create( function()
-            if callback then
-                callback()
-            end
+            
         end )
 
         ProgressTimerAction:runAction(cc.Sequence:create(progressTo, clear))
-    end
+    --end
 end
 
 --指示球设置

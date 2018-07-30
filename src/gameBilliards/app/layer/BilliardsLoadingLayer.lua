@@ -16,7 +16,7 @@ function BilliardsLoadingLayer:initView()
         self.bg:setScale(display.width / self.bg:getContentSize().width)
     end
     self:addChild(self.bg)
-    self:setTag(2000)
+    self:setTag(g_EightBallData.g_Layer_Tag.commonLayer)
     local node = cc.CSLoader:createNode("gameBilliards/csb/BilliardsLoadingLayer.csb")
     if node then
         self.node = node
@@ -36,7 +36,7 @@ function BilliardsLoadingLayer:initView()
         end
 
         self:createAni(node)
-        self:loadPlistRes()
+        --self:loadPlistRes()
     end
 end
 
@@ -49,16 +49,36 @@ function BilliardsLoadingLayer:createAni(node)
     node:addChild(self._sprite)
 end
 
+local mPercent = 0
 function BilliardsLoadingLayer:loadPlistRes()
-    local _plist = "gameBilliards/plist/BilliardsCommon.plist"
-    local _png = "gameBilliards/plist/BilliardsCommon.png"
-    display.removeSpriteFrames(_plist, _png)
-    display.loadSpriteFrames(_plist, _png)
+    local resData = gameFty:getResDataByGame(G_Game_NumType.EIGHTBALL)
+    local callBack = function(data)
+        if data <= 100 then
+            
+        else
+            local layer = require(gamename .. "/app/layer/EightBallLayer").new(isResume)
+            if layer then
+                display.getRunningScene():addChild(layer)
+            end
+        end
+    end
+    tool:loadCacheResByType(resData, callBack)
+    --    local res = G_ResInfo[G_LoadResType.EIGHTBALL]
 
-    _plist = "gameBilliards/plist/EightBall.plist"
-    _png = "gameBilliards/plist/EightBall.png"
-    display.removeSpriteFrames(_plist, _png)
-    display.loadSpriteFrames(_plist, _png)
+    --    local _plist = "gameBilliards/plist/BilliardsFrameEffet.plist"
+    --    local _png = "gameBilliards/plist/BilliardsFrameEffet.png"
+    --    display.removeSpriteFrames(_plist, _png)
+    --    display.loadSpriteFrames(_plist, _png)
+
+    --    _plist = "gameBilliards/plist/BilliardsCommon.plist"
+    --    _png = "gameBilliards/plist/BilliardsCommon.png"
+    --    display.removeSpriteFrames(_plist, _png)
+    --    display.loadSpriteFrames(_plist, _png)
+
+    --    _plist = "gameBilliards/plist/EightBall.plist"
+    --    _png = "gameBilliards/plist/EightBall.png"
+    --    display.removeSpriteFrames(_plist, _png)
+    --    display.loadSpriteFrames(_plist, _png)
 end
 
 function BilliardsLoadingLayer:btnCallback(sender, eventType)
@@ -71,7 +91,8 @@ function BilliardsLoadingLayer:btnCallback(sender, eventType)
         if nTag == 1 then
             self:removeFromParent()
         elseif nTag == 2 then
-            self:removeFromParent()
+            EBGameControl:leaveGame()
+            --AppBaseInstanse.Mobile_APP:enterScene("GameHallScene", "FADE", 0.2)
         end
     elseif eventType == TOUCH_EVENT_MOVED then
 
@@ -85,7 +106,7 @@ function BilliardsLoadingLayer:onEnter()
 end
 
 function BilliardsLoadingLayer:onExit()
-    
+    mPercent = 0
 end
 
 return BilliardsLoadingLayer

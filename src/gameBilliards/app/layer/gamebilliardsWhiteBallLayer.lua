@@ -5,6 +5,10 @@ gamebilliardsWhiteBallLayer.__index = gamebilliardsWhiteBallLayer
 local m_posX = 0
 local m_posY = 0
 
+local m_posXDiff = 0
+local m_posYDiff = 0
+local m_variance = 0
+
 function gamebilliardsWhiteBallLayer:ctor(mainLayer,posX,posY)
     m_posX = (posX ~= 0 and posX) and posX or 0
     m_posY = (posY ~= 0 and posY) and posY or 0
@@ -14,14 +18,19 @@ function gamebilliardsWhiteBallLayer:ctor(mainLayer,posX,posY)
 end
 
 function gamebilliardsWhiteBallLayer:initView()
-    --self:setGlobalZOrder(10000)
+    -- self:setGlobalZOrder(10000)
     local layer = cc.LayerColor:create(cc.c4b(0, 0, 0, 100))
     if layer then
         self:addChild(layer)
     end
     self.node = cc.CSLoader:createNode("gameBilliards/csb/billiardsWhiteBallLayer.csb")
-    --self.node:setGlobalZOrder(10000)
+    self:setTag(g_EightBallData.g_Layer_Tag.whiteBallLayer)
+    -- self.node:setGlobalZOrder(10000)
     if self.node then
+        m_posXDiff =(display.width - self.node:getContentSize().width) / 2
+        m_posYDiff =(display.height - self.node:getContentSize().height) / 2
+        m_variance = math.sqrt(math.pow(m_posXDiff, 2) + math.pow(m_posYDiff, 2))
+        print("====== white ball layer display param = ",m_posXDiff,m_posYDiff,m_variance)
         self.node:setAnchorPoint(cc.p(0.5, 0.5))
         self.node:setPosition(display.center)
         self:addChild(self.node)
@@ -31,15 +40,15 @@ function gamebilliardsWhiteBallLayer:initView()
         end
 
         self.ball_white = self.node:getChildByTag(1)
-        --self.ball_white:setGlobalZOrder(10000)
+        -- self.ball_white:setGlobalZOrder(10000)
         self.redPoint = self.ball_white:getChildByTag(2)
-        --self.redPoint:setGlobalZOrder(10000)
-        local _value = (self.ball_white:getContentSize().width / 2-30)
-        self.redPoint:setPosition(cc.p(( _value * m_posX + _value+35 ),( _value * m_posY + _value+35 )))
+        -- self.redPoint:setGlobalZOrder(10000)
+        local _value =(self.ball_white:getContentSize().width / 2 - 30)
+        self.redPoint:setPosition(cc.p((_value * m_posX + _value + 35),(_value * m_posY + _value + 35)))
         self.backGround = self.node:getChildByTag(3)
     end
-    self.node:setPositionY(0-(display.height-self.node:getContentSize().height))
-    self.node:runAction(cc.MoveTo:create(0.3,cc.p(display.cx,display.cy)))
+    self.node:setPositionY(0 -(display.height - self.node:getContentSize().height))
+    self.node:runAction(cc.MoveTo:create(0.3, cc.p(display.cx, display.cy)))
 end
 
 function gamebilliardsWhiteBallLayer:registerTouchHandler()
@@ -69,7 +78,7 @@ end
 --当前选择的控件
 local chooseCompenent
 function gamebilliardsWhiteBallLayer:onTouchBegan(touch)
-    local curPos = touch:getLocation()
+    local curPos = self.node:convertToNodeSpace(touch:getLocation())
     local circleX,circleY = self.ball_white:getPosition()
     if math.sqrt((curPos.x-circleX)*(curPos.x-circleX)+(curPos.y-circleY)*(curPos.y-circleY)) < self.ball_white:getContentSize().width/2-30 then
         --self.redPoint:setPosition(self.ball_white:convertToNodeSpace(curPos))
@@ -84,7 +93,7 @@ end
 
 function gamebilliardsWhiteBallLayer:onTouchEnded(touch)
     if chooseCompenent == 3 then
-        self:removeSelf()
+        tool.closeLayerAni(self.node,self)
     elseif chooseCompenent == 2 then
         local _posX = (self.redPoint:getPositionX()-(self.ball_white:getContentSize().width / 2))/(self.ball_white:getContentSize().width / 2-35)
         local _posY = (self.redPoint:getPositionY()-(self.ball_white:getContentSize().width / 2))/(self.ball_white:getContentSize().width / 2-35)
@@ -96,23 +105,9 @@ end
 
 function gamebilliardsWhiteBallLayer:onTouchMoved(touch)
     if chooseCompenent == 2 then
-        local curPos = touch:getLocation()
-        local posX, posY
+        local curPos = self.node:convertToNodeSpace(touch:getLocation())
         local circleX, circleY = self.ball_white:getPosition()
         if math.sqrt((curPos.x - circleX) *(curPos.x - circleX) +(curPos.y - circleY) *(curPos.y - circleY)) > (self.ball_white:getContentSize().width / 2-30) then
---            local rotateX = (curPos.x - circleX)
---            local rotateY = (curPos.y - circleY)
---            local rotate = math.atan(rotateY / rotateX) * 180 / math.pi
---            if rotateX >= 0 and rotateY >= 0 then
---                rotate = 180 - rotate
---            elseif rotateX <= 0 and rotateY <= 0 then
---                rotate = 360 - rotate
---            elseif rotateX <= 0 and rotateY >= 0 then
---                rotate = math.abs(rotate)
---            elseif rotateX >= 0 and rotateY <= 0 then
---                rotate = 180 + math.abs(rotate)
---            end
---            print("rotate",rotate)
         else
             self.redPoint:setPosition(self.ball_white:convertToNodeSpace(touch:getLocation()))
         end
@@ -127,7 +122,8 @@ function gamebilliardsWhiteBallLayer:btnCallback(sender, eventType)
         end
     elseif eventType == TOUCH_EVENT_ENDED then
         if nTag == 3 then
-            self:removeSelf()
+            tool.closeLayerAni(self.node,self)
+            --self:removeSelf()
         end
     elseif eventType == TOUCH_EVENT_MOVED then
         
@@ -142,7 +138,7 @@ end
 
 function gamebilliardsWhiteBallLayer:onExit()
     if self._camera then
-        self._camera:removeFromParent()
+        self._camera = nil
     end
     m_posX = 0
     m_posY = 0

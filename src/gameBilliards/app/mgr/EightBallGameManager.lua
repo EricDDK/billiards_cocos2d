@@ -174,6 +174,7 @@ local switch = {
 -- 同步一下结果，所有球位置修正
 --@ rootNode 游戏主layer
 function EightBallGameManager:syncHitResult(rootNode, isResume)
+    print("EightBallGameManager syncHitResult",debug.traceback())
     if isSyncHitResult and not isResume then
         return
     end
@@ -261,12 +262,16 @@ function EightBallGameManager:syncHitResult(rootNode, isResume)
         EBGameControl:dealWhiteBallInHole()
     end
 
-    rootNode.cue:setRotationOwn(0, rootNode)
-    -- 击球结束同步一下结果
+    rootNode.cue:setRotationOwn(0, rootNode)  -- 击球结束同步一下结果
     rootNode.cue:setCueLineCircleVisible(true)
     rootNode.cue:setRotationOwn(0, rootNode)
+    BilliardsAniMgr:createUserFrameAni(rootNode)
     EBGameControl:dealTipBalls()  --处理头像框指示球
     EBGameControl:setSuitCuePos()  --设置合适的杆位置
+    EBGameControl:doChangeRound()  --交换对手事件
+    if ballsResultArray.Result ~= g_EightBallData.gameRound.foul then
+        rootNode.whiteBall:clearWhiteBallView()  --清除白球表面tips
+    end
 
     -- 球体底层提示框架（这里是三目，当前轮需要是我）
     -- value = 1 打全色  || value = 2 打半色
@@ -343,8 +348,12 @@ end
 
 
 --游戏轮次索引
-function EightBallGameManager:setGameRound(args)
-    mGameRound = args
+function EightBallGameManager:setGameRound(gameRound)
+    if not gameRound then
+        print(" set game round param = null ",debug.traceback())
+        return
+    end
+    mGameRound = gameRound
 end
 
 function EightBallGameManager:getGameRound()
@@ -416,13 +425,13 @@ end
 
 local effectSwitch = {
     [g_EightBallData.sound.ball] = function ()
-        return "gameBilliards/sound/BallHit.wav"
+        return "gameBilliards/sound/BallHit.mp3"
     end,
     [g_EightBallData.sound.cue] = function ()
-        return "gameBilliards/sound/CueHit.wav"
+        return "gameBilliards/sound/CueHit.mp3"
     end,
     [g_EightBallData.sound.pocket] = function ()
-        return "gameBilliards/sound/Pocket.wav"
+        return "gameBilliards/sound/Pocket.mp3"
     end,
     [g_EightBallData.sound.fineTurning] = function ()
         return "gameBilliards/sound/Fine_Tuning.mp3"
@@ -432,41 +441,43 @@ local effectSwitch = {
     end,
 }
 
-
--- 播放音效
--- 这里有点乱，待整理
-function EightBallGameManager:playEffect(nType,fVolume)
-    
-    if device.platform == "windows" then return end
-
-    local volume = 1.0
-    if fVolume then
-        volume = fVolume
-    end
-    local path
-    local funcEffect = effectSwitch[nType]
-    if funcEffect then
-        path = funcEffect()
-    end
-    amgr.playEffect(path, false, false,volume)
+function EightBallGameManager:playEffectByIndex(index,volume)
+    local funcEffect = effectSwitch[index]
+    --if volume then
+        amgr.playEffectByVolume(funcEffect(),volume)
+--    else
+--        amgr.playEffectByVolume(funcEffect())
+--    end
 end
 
 function EightBallGameManager:playEffectByTag(tagA,tagB,velocity)
-    if velocity > 1000.0 then
-        velocity = 1000.0
+    if velocity > 1000 then
+        velocity = 1.0
+    else
+        velocity = velocity/1000
     end
     if tagA and tagB then
         -- 这是球和球的碰撞
         if tagA <= 15 and tagB <= 15 then
             if velocity then
-                EightBallGameManager:playEffect(g_EightBallData.sound.ball,velocity/1000)
+                EightBallGameManager:playEffectByIndex(g_EightBallData.sound.ball,velocity)
             else
-                EightBallGameManager:playEffect(g_EightBallData.sound.ball)
+                EightBallGameManager:playEffectByIndex(g_EightBallData.sound.ball,1.0)
             end
         elseif tagA == g_EightBallData.g_Border_Tag.hole or tagB == g_EightBallData.g_Border_Tag.hole then
-            EightBallGameManager:playEffect(g_EightBallData.sound.pocket)
+            EightBallGameManager:playEffectByIndex(g_EightBallData.sound.pocket,1.0)
         end
     end
+end
+
+local effectRes = {
+    "gameBilliards/sound/BallHit.mp3",
+    "gameBilliards/sound/CueHit.mp3",
+    "gameBilliards/sound/Pocket.mp3",
+}
+--预加载音频
+function EightBallGameManager:preLoadBilliardsEffect()
+    amgr.preloadEffect(effectRes)
 end
 
 function EightBallGameManager:init()

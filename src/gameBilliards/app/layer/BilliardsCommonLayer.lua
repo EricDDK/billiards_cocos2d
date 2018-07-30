@@ -18,7 +18,6 @@ function BilliardsCommonLayer:initView(str)
         node:setAnchorPoint(cc.p(0.5, 0.5))
         node:setPosition(cc.p(display.cx, display.cy))
         self:addChild(node)
-        self:setTag(2000)
         local function btnCallback(sender, eventType)
             self:btnCallback(sender, eventType)
         end
@@ -35,7 +34,6 @@ function BilliardsCommonLayer:initView(str)
                     btn:addTouchEventListener(btnCallback)
                 end
             end
-
         end
     end
 end

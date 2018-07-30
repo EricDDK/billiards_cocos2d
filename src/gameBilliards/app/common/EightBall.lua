@@ -3,6 +3,7 @@ local EightBall = class("EightBall", BallBase)
 
 -- 保存球状态
 EightBall.mBallState = g_EightBallData.ballState.stop
+-- 精确到小数第几位
 local reservedDigits = "%.".. g_EightBallData.ReservedDigit .."f"
 
 -- 调整高光
@@ -17,8 +18,8 @@ end
 -- 调整速度，刷新,3D动画的刷新以及速度的刷新
 --@nTime 这次击打的当前时间，也就是多少帧
 function EightBall:adjustBallSpeed(nTime)
-    local velocity
-    local v
+    local velocity = self:getPhysicsBody():getVelocity()
+    local v = math.pow(velocity.x, 2) + math.pow(velocity.y, 2)
     if nTime and nTime > g_EightBallData.increaseVelocityTime then
         velocity = self:getPhysicsBody():getVelocity()
         v = math.pow(velocity.x, 2) + math.pow(velocity.y, 2)
@@ -29,20 +30,24 @@ function EightBall:adjustBallSpeed(nTime)
             end
         end
     end
-    if not velocity then
-        velocity = self:getPhysicsBody():getVelocity()
-        v = math.pow(velocity.x, 2) + math.pow(velocity.y, 2)
-    end
     if v ~= 0 then
         local Texture = self:getChildByTag(g_EightBallData.g_Border_Tag.texture3D)
         if Texture then
-            Texture:adjust3DRolling(velocity, self:getPhysicsBody():getAngularVelocity())
+            --Texture:adjust3DRolling(velocity, self:getPhysicsBody():getAngularVelocity())
+            local rigidBody = Texture:getPhysicsObj()
+            if rigidBody then
+                rigidBody:setAngularVelocity(cc.vec3(- velocity.y / g_EightBallData.ballRollingRate, velocity.x / g_EightBallData.ballRollingRate,
+                self:getPhysicsBody():getAngularVelocity() / g_EightBallData.ballRollingRate))
+            end
         end
     end
 end
 
 -- 检测球是否速度足够小可以停止转动
 function EightBall:checkIsStop()
+    if self:getBallState() == g_EightBallData.ballState.stop then
+        return true
+    end
     local _velocity = self:getPhysicsBody():getVelocity()
     if math.abs(_velocity.x) >= g_EightBallData.ballVelocityLimit
         or math.abs(_velocity.y) >= g_EightBallData.ballVelocityLimit then
@@ -51,7 +56,7 @@ function EightBall:checkIsStop()
         and math.abs(_velocity.y) < g_EightBallData.ballVelocityLimit then
         return true
     end
-    return nil
+    return false
 end
 
 -- 球停止运动
@@ -69,6 +74,7 @@ function EightBall:resetForceAndEffect()
         local cueRotate = mathMgr:changeAngleTo0to360(self:getRotation())
         self:setRotationOwn(cueRotate)
     end
+    self:setBallState(g_EightBallData.ballState.stop)
 end
 
 -- 处理白球上的指示符视图
@@ -108,7 +114,7 @@ function EightBall:dealBallInBag()
     self:getPhysicsBody():applyForce(cc.p(-1000000, -1000000), cc.p(0, 0))
 end
 
--- 重置球
+-- 重置球位置，状态，旋转角度归0
 function EightBall:resetBallState()
     self:setScale(g_EightBallData.radius/(self:getContentSize().width/2))
     self:setRotationOwn(0)
@@ -194,7 +200,7 @@ function EightBall:loadEffect()
         highLight:setScale(0.6)
         highLight:setPosition(cc.p(self:getContentSize().width / 2, self:getContentSize().height / 2))
         highLight:setCameraMask(cc.CameraFlag.USER2)
-        --ighLight:setGlobalZOrder(0)
+        --highLight:setGlobalZOrder(0)
         highLight:setLocalZOrder(-100)
         highLight:setTag(g_EightBallData.g_Border_Tag.heighLight)
         self:addChild(highLight)
@@ -314,14 +320,13 @@ function EightBall:whiteBallTouchEnded(rootNode,pos,isReceive,isLimitedPos)
             self:sendSetWhiteBallMessage(pos.x,pos.y,rootNode,true)
         end
     else
-        if mathMgr:checkBallLocationIsOut(rootNode, pos, self) then
-            self:sendSetWhiteBallMessage(self:getPositionX(),self:getPositionY(),rootNode,true)
-        else
-            self:setPosition(cc.p(oldWhiteBallPos.x,oldWhiteBallPos.y))
-            self:sendSetWhiteBallMessage(self:getPositionX(),self:getPositionY(),rootNode,true)
-        end
-        --self:sendSetWhiteBallMessage(self:getPositionX(),self:getPositionY(),rootNode,true)
-        --self:setPosition(cc.p(oldWhiteBallPos.x,oldWhiteBallPos.y))
+        self:sendSetWhiteBallMessage(self:getPositionX(),self:getPositionY(),rootNode,true)
+        -- if mathMgr:checkBallLocationIsOut(rootNode, pos, self) then
+        --     self:sendSetWhiteBallMessage(self:getPositionX(),self:getPositionY(),rootNode,true)
+        -- else
+        --     self:setPosition(cc.p(oldWhiteBallPos.x,oldWhiteBallPos.y))
+        --     self:sendSetWhiteBallMessage(self:getPositionX(),self:getPositionY(),rootNode,true)
+        -- end
     end
 end
 
@@ -388,12 +393,12 @@ function EightBall:syncBallState(event,isResume)
     if event.fPositionX <= g_EightBallData.inBagPos.x then
         return
     end
+    --解决球会从洞里同步出来
+    if self:getBallState() == g_EightBallData.ballState.inHole and event.fPositionX > 0 then
+        self:getPhysicsBody():resetForces()
+    end
     self:setPosition(cc.p(event.fPositionX,event.fPositionY))
     self:getPhysicsBody():setVelocity(cc.p(event.fVelocityX,event.fVelocityY))
-    --self:getPhysicsBody():setAngularVelocity(event.fAngularVelocity)
-    -- if isResume then
-    --     self:getPhysicsBody():applyForce(cc.p(event.fUnevenBarsForceX,event.fUnevenBarsForceY),cc.p(0,0))
-    -- end
 end
 
 -- 获取球帧同步信息
@@ -493,6 +498,9 @@ end
 
 -- 获取此球是否进洞
 function EightBall:getIsInHole()
+    if self:getPositionX() < 70 or self:getPositionX() > 910 or self:getPositionY() > 475 or self:getPositionY() < 70  then
+        return true
+    end
     return self:getBallState() == g_EightBallData.ballState.inHole
     and (self:getPositionX() < 70 or self:getPositionX() > 910 or self:getPositionY() > 475 or self:getPositionY() < 70 )
 end
@@ -508,6 +516,9 @@ end
 function EightBall:setRotationOwn(rotate)
     if not rotate then
         return
+    end
+    if rotate == 0 then
+        rotate = 0.1
     end
     if self:getTag() == g_EightBallData.g_Border_Tag.whiteBall then
         self:setRotation(rotate)

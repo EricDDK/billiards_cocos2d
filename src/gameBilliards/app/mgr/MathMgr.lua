@@ -126,7 +126,7 @@ function mathMgr.computeCollision(w, h, r, newrx, newry)
       local dx1 = math.max(dx, -w * 0.5)
       local dy = math.min(newry, h * 0.5)
       local dy1 = math.max(dy, -h * 0.5)
-      return (dx1 - newrx) * (dx1 - newrx) + (dy1 - newry) * (dy1 - newry) <= r * r
+      return (dx1 - newrx) * (dx1 - newrx) + (dy1 - newry) * (dy1 - newry) <= r * r - 1
 end
 
 function mathMgr.getNewRx_Ry(x1,y1,x2,y2,rotation)
@@ -141,11 +141,26 @@ function mathMgr.getNewRx_Ry(x1,y1,x2,y2,rotation)
     return json
 end
 
---点到直线最短距离
-function mathMgr.getShortestDistanceBetweenPointAndLine(rotate,ballPos,whitePos,radius)
-    local A,B,C = mathMgr.getLineEquation(rotate / 180 * math.pi, whitePos)
-    local _verticalLine = math.abs(A*ballPos.x+B*ballPos.y+C)/math.sqrt(A*A+B*B)
-    return math.sqrt(4*radius*radius-_verticalLine*_verticalLine)
+-- 点到直线最短距离,获取彩球在直线的正角度还是负角度
+-- 路径检测输出函数
+-- 根据直线斜率取得过彩球的垂线,直接计算球的C和直线的C，根据角度判断C和C的大小比较球与球的位置
+function mathMgr.getShortestDistanceBetweenPointAndLine(rotate, ballPos, whitePos, radius)
+    local A, B, C = mathMgr.getLineEquation(rotate / 180 * math.pi, whitePos)
+    local _verticalLine = math.abs(A * ballPos.x + B * ballPos.y + C) / math.sqrt(A * A + B * B)
+
+    if (rotate >= 0 and rotate < 90) or(rotate >= 270 and rotate <= 360) then
+        if A * ballPos.x + B * ballPos.y + C > 0 then
+            return math.sqrt(4 * radius * radius - _verticalLine * _verticalLine), 1
+        else
+            return math.sqrt(4 * radius * radius - _verticalLine * _verticalLine), -1
+        end
+    else
+        if A * ballPos.x + B * ballPos.y + C > 0 then
+            return math.sqrt(4 * radius * radius - _verticalLine * _verticalLine), -1
+        else
+            return math.sqrt(4 * radius * radius - _verticalLine * _verticalLine), 1
+        end
+    end
 end
 
 --获取射线的方程式 return y=kx+b
@@ -256,8 +271,6 @@ end
 function mathMgr:checkBallLocationIsLegal(rootNode, pos, whiteBall)
     local desk = rootNode.desk
     local radius = whiteBall:getContentSize().width / 2
-    local deskWidth = rootNode.desk:getContentSize().width
-    local deskHeight = rootNode.desk:getContentSize().height
     local distance = whiteBall:getContentSize().width
     local ballPosX, ballPosY
     if pos.x >(60 + radius) and pos.x <(913 - radius) and pos.y >(60 + radius) and pos.y <(489 - radius) then

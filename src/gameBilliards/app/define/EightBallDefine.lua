@@ -12,11 +12,11 @@ local whiteBallFiction                                  = 0.2   --白球摩擦�
 
 local ballFriction                                      = 0  --球体摩擦力
 
-EightBallDefine.increaseVelocityTime                    = 2  --开球多久后可以开始减速
+EightBallDefine.increaseVelocityTime                    = 1  --开球多久后可以开始减速
 
-EightBallDefine.ballLinearDamping                       = 0.4  --球体线性阻尼(空气阻力)
+EightBallDefine.ballLinearDamping                       = 0.7  --球体线性阻尼(空气阻力)
 
-EightBallDefine.ballLinearIncreaseMultiple              = 0.6  --当球体速度小于ballDampingValue时，速度多少
+EightBallDefine.ballLinearIncreaseMultiple              = 0.7  --当球体速度小于ballDampingValue时，速度多少
 
 EightBallDefine.ballLinearIncreaseDoubleMultiple        = 1  --二次衰减速率减少
 
@@ -26,7 +26,7 @@ EightBallDefine.ballDoubleDampingValue                  = 150*150  --球体速�
 
 EightBallDefine.ballAngularDamping                      = 1  --球体旋转阻尼,旋转的阻力
 
-EightBallDefine.ballRollingRate                         = 14    --球体3d滚动动画的快慢,越大是滚动1米需要的圈数越小(数值越大，滚动速度越慢)(动画速度)
+EightBallDefine.ballRollingRate                         = 20    --球体3d滚动动画的快慢,越大是滚动1米需要的圈数越小(数值越大，滚动速度越慢)(动画速度)
 
 ----------------------------------------------------------------------------------------------------------
 
@@ -38,13 +38,13 @@ local borderFriction                                    = 0.5  --边界摩擦力
 
 ----------------------------------------------------------------------------------------------------------
 
-EightBallDefine.lineSpeedRatio                          = 12000  --直线瞬间力量系数
+EightBallDefine.lineSpeedRatio                          = 16000  --直线瞬间力量系数
 
 EightBallDefine.lineForceRatio                          = 5  --直线击打力量系数，越大力量越大
 
 EightBallDefine.rotateForceRatio                        = 10000  --高低干力量系数，越大旋转越激烈
 
-EightBallDefine.leftRightForceRatio                     = 5000  --左右塞的力量系数
+EightBallDefine.leftRightForceRatio                     = 300  --左右塞的力量系数
 
 EightBallDefine.prickForceRatio                         = 10  --扎杆的旋转强度，越大旋转越强烈(弧线球)
 
@@ -56,11 +56,11 @@ local Gravity                                           = -9.8  --重力 （cons
 
 EightBallDefine.ReservedDigit                           = 10  --精确到小数第几位
 
-EightBallDefine.freshCount                              = 3  --刷新频率const，越高增加精度(莫动)，越高越卡，每秒检测次数 （const）
+EightBallDefine.freshCount                              = 4  --刷新频率const，越高增加精度(莫动)，越高越卡，每秒检测次数 （const）
 
 EightBallDefine.screenRefreshRate                       = EightBallDefine.freshCount*60.0  --勿动，屏幕帧率，现在是5*60=300 （const）
 
-EightBallDefine.ballVelocityLimit                       = 2  --判断小球停止的最小速度 
+EightBallDefine.ballVelocityLimit                       = 4  --判断小球停止的最小速度 
 
 ----------------------------------------------------------------------------------------------------------
 
@@ -87,6 +87,8 @@ EightBallDefine.operateTimer                            = 25   --定时器间隔
 
 EightBallDefine.checkStopTimerInterval                  = 0.1  --检测停止定时器间隔
 
+EightBallDefine.checkQuickClickInterval                 = 0.2  --判断快速点击的时间间隔
+
 ----------------------------------------------------------------------------------------------------------
 
 --@边界刚体属性
@@ -99,6 +101,10 @@ EightBallDefine.whilteBallPhysicsMaterial               = cc.PhysicsMaterial(bal
 ----------------------------------------------------------------------------------------------------------
 
 EightBallDefine.inBagPos                                = cc.p(-15, 487)
+
+EightBallDefine.auditionWinScore                        = 2
+
+EightBallDefine.auditionLoseScore                       = -1
 
 EightBallDefine.HitColor = {
     notMy               = -1,       --不是我的回合
@@ -138,6 +144,7 @@ EightBallDefine.gameState = {
 }
 
 EightBallDefine.gameRound = {
+    countdown           = -2,       --不是判断，只是倒计时的函数result索引
     practise            = -1,       --练习模式(比赛还没开始)
     none                = 0,        --初始
     foul                = 1,        --犯规，交换击球
@@ -145,18 +152,24 @@ EightBallDefine.gameRound = {
     change              = 3,        --交换击球
     gameOver            = 4,        --比赛结束(黑八进了)
     restart             = 5,        --首杆进黑八
-    exception           = 6,        --异常情况
+    exception           = 6,        --异常情况(在倒计时框中是关闭倒计时)
 }
 
 EightBallDefine.g_GZOrder = {
     ball                = 0,        --球体Z轴
     render3D            = 0,        --3D刚体Z轴
     cue                 = 0,        --杆Z轴
-    heighLight           = -1,      --高光Z轴
+    heighLight          = -1,      --高光Z轴
     checkLine           = 2000,     --碰撞检测线Z轴
     powerBar            = 20000,    --碰撞检测线Z轴
     whiteHand           = 2001,     --拿起白球白手Z轴
     forbidden           = 2000,     --禁止放置白球Z轴
+}
+
+EightBallDefine.g_Layer_Tag = {
+    mainLayer           = 1000,
+    commonLayer         = 2000,
+    whiteBallLayer      = 3000,
 }
 
 EightBallDefine.g_Border_Tag = {
@@ -179,19 +192,25 @@ EightBallDefine.g_Border_Tag = {
 
     texture3D           = 8,
     timer               = 9,
+    clockParticle       = 10,
+    tipsTimer           = 11,
 
     whiteShadow         = 20,
     forbidden           = 21,
     moveHand            = 22,
     tips                = 23,
+    linkSpine           = 24,
 
     border              = 100,
     hole                = 200,
     bagBorder           = 225,
+    bagBottom           = 226,
     cueCheck            = 250,
     lineCheck           = 300,
     circleCheck         = 350,
     circleShadow        = 351,
+    whiteBallLine       = 352,
+    colorBallLine       = 353,
     whiteCollisionLine  = 400,
     ballCollisionLine   = 450,
     heighLight          = 1000,

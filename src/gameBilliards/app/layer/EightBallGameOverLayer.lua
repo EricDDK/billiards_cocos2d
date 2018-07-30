@@ -59,8 +59,13 @@ function EightBallGameOverLayer:initGameInfo(event)
         local index = event.WinUserID == player:getPlayerUserID() and 1 or 2
         playerWin:getChildByName("Winner"):setVisible(true)
         playerLose:getChildByName("Winner"):setVisible(false)
-        playerWin:getChildByName("WinScore"):setString("+" .. event.WinScore)
-        playerLose:getChildByName("WinScore"):setString("-" .. event.WinScore)
+        if event.WinScore == 2 then
+            playerWin:getChildByName("WinScore"):setString("+" .. g_EightBallData.auditionWinScore)
+            playerLose:getChildByName("WinScore"):setString(g_EightBallData.auditionLoseScore)
+        else
+            playerWin:getChildByName("WinScore"):setString("+" .. event.WinScore)
+            playerLose:getChildByName("WinScore"):setString("-" .. event.WinScore) 
+        end
         if index == 1 then
             
         elseif index == 2 then

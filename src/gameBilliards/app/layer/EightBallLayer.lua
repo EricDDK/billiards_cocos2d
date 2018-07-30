@@ -34,6 +34,7 @@ local nBtn_Back                     = 131       -- 退出按钮
 local nBtn_Set                      = 132       -- 设置按钮
 
 local nSlider_PowerBar              = 21        -- 力量条
+local nSprite_PowerNum              = 22        -- 力量条数值精灵
 local nSlider_View                  = 24        -- 力量条屏幕中间视图
 
 local nPanel_FineTurning            = 31        -- 微调框裁剪
@@ -51,6 +52,8 @@ local nPanel_Tip                    = 55        -- 提示框
 local nText_Tip                     = 60        -- 提示信息
 local nImg_DeskTem                  = 61        -- 桌子的白色蒙底
 
+local nPanel_BlackBg                = 250       -- 用户头像框黑色蒙底
+
 --------------------成员变量--------------------
 
 local m_rotateX                     = 0         -- 高低杆x
@@ -63,7 +66,9 @@ local mTime                         = 0         -- 记录定时器总跑的时�
 local m_syncBallTimeEntery = nil
 local m_ballCheckStopSchedulerEntry = nil  --定时器
 
-function EightBallLayer:ctor(isResume)
+function EightBallLayer:ctor(isResume,isAudition)
+    print("[EightBallLayer:ctor] isResume,isAudition",isResume,isAudition)
+    self.isAudition = isAudition
     self:initView(isResume)
     self:registerTouchHandler()
     self:registerEvents()
@@ -94,6 +99,10 @@ function EightBallLayer:initView(isResume)
             self.text_Score = img_VS:getChildByTag(nText_VS)
             self.img_User1 = panel_Users:getChildByTag(nImg_User1)
             self.img_User2 = panel_Users:getChildByTag(nImg_User2)
+            self.userName1 = self.img_User1:getChildByName("_Name")
+            self.userName2 = self.img_User2:getChildByName("_Name")
+            self.userName1:setString("")
+            self.userName2:setString("")
             self.userBall1 = self.img_User1:getChildByName("_Ball")
             self.userBall2 = self.img_User2:getChildByName("_Ball")
             self.userBall1:setVisible(false)  self.userBall2:setVisible(false)
@@ -112,6 +121,8 @@ function EightBallLayer:initView(isResume)
             if self.btn_Set then
                 self.btn_Set:addTouchEventListener(btnCallback)
             end
+            self.blackBg = panel_Users:getChildByTag(nPanel_BlackBg)
+            self.blackBg:setVisible(false)
         end
         self.img_PowerBar = self.node:getChildByTag(nImg_PowerBar)
         if self.img_PowerBar then
@@ -137,6 +148,9 @@ function EightBallLayer:initView(isResume)
 
         self.btn_reset = self.node:getChildByTag(64)
         self.btn_reset:addTouchEventListener(btnCallback)
+        if not G_isDebug then
+            self.btn_reset:setVisible(false) 
+        end
 
         self.panel_setting = self.node:getChildByTag(nPanel_Setting)
         if self.panel_setting then
@@ -177,6 +191,8 @@ function EightBallLayer:registerEvents()
     eventRoomListeners[g_Room_NTF_PLAYERDISCONNECT] = handler(self, self.receivePlayerDisconnected)-- 玩家掉线啦
     eventRoomListeners[g_Room_NTF_PLAYERRECONNECT] = handler(self, self.receivePlayerConnecte)-- 玩家重连啦
     eventRoomListeners[g_Room_NTF_TABLECHAT] = handler(self, self.receiveTableChat)-- 桌子聊天
+    eventRoomListeners[g_Room_NTF_ROOMMESSAGE] = handler(self, self.receiveRoomMessage)-- 房间内消息
+
     -- 游戏内事件
     eventListeners[g_EIGHTBALL_NTF_GAMESTART] = handler(self, self.receiveGameStart)
     eventListeners[g_EIGHTBALL_NTF_TABLEINFO] = handler(self, self.receiveTableInfo)
@@ -206,7 +222,7 @@ function EightBallLayer:receiveJoinTable(event)
             local curPlayerInfo = dmgr:getPlayerInfoByTableIdAndSeatID(event.tableID, event.seatID , event.userID)
             if curPlayerInfo then
                 dmgr:playerIn(curPlayerInfo)
-                self:showCareerByIndex(2, curPlayerInfo.User.UserInfo.Head)
+                self:showCareerByIndex(2, curPlayerInfo.User.UserInfo.Head,curPlayerInfo.User.UserInfo.NickName)
             end
         end
     end
@@ -224,7 +240,7 @@ function EightBallLayer:receiveLeaveTable(event)
             if playerInfo then
                 if playerInfo.User.UserInfo.UserID == event.userID then
                     dmgr:playerOut(playerInfo)
-                    self:showCareerByIndex(2, -1)
+                    self:showCareerByIndex(2, -1,"")
                 end
             end
         end
@@ -234,7 +250,7 @@ end
 function EightBallLayer:receiveGameReady(event)
     print("EightBallLayer:receiveGameReady", event.userID, event.tableID, event.seatID)
     if event.userID == player:getPlayerUserID() then
-        EBGameControl:doInRoomSuccess()
+        self:cleanWaitPanel()
     end
     self:showOriginRolePanel()
 end
@@ -248,6 +264,25 @@ function EightBallLayer:receivePlayerConnecte(event)
 end
 
 function EightBallLayer:receiveTableChat(event)
+end
+
+function EightBallLayer:receiveRoomMessage(event)
+    print("[EightBallLayer:receiveRoomMessage]:message = ", event.content)
+    self:cleanWaitPanel()
+    player:setIsAuditionTime(true)
+    if self.isAudition then
+        local back = function(isOK)
+            EBGameControl:leaveGame()
+        end
+        local dataMsgBox = {
+            nodeParent = nil,
+            msgboxType = MSGBOX_TYPE_UPDATE,
+            msgInfo = event.content,
+            callBack = back,
+        }
+        display.getRunningScene():addChild(require("hallcenter.widgets.CommonMsgBoxWidget").new(dataMsgBox))
+    end
+    --EBGameControl:leaveGame()
 end
 
 function EightBallLayer:receiveTableInfo(event)
@@ -272,7 +307,11 @@ function EightBallLayer:receiveGameStart(event)
         BilliardsAniMgr:setSliderBarAni(true,self)
         --BilliardsAniMgr:setFineTurningAni(true,self)
         BilliardsAniMgr:setDeskTempAni(self,true)  --桌子白板
-        BilliardsAniMgr:setHeadTimerAni(self.profressTimer1,g_EightBallData.operateTimer,nil)
+        local timerCallBack = function()
+            BilliardsAniMgr:setGameTips(self,g_EightBallData.gameRound.countdown)
+        end
+        BilliardsAniMgr:setHeadTimerAni(self.profressTimer1,g_EightBallData.operateTimer,timerCallBack)
+        BilliardsAniMgr:createUserFrameAni(self)
         self.cue.spriteLine:setVisible(true)
         self.cue.circleCheck:setVisible(true)
     else
@@ -283,6 +322,7 @@ function EightBallLayer:receiveGameStart(event)
         --BilliardsAniMgr:setFineTurningAni(false,self)
         BilliardsAniMgr:setDeskTempAni(self,false)  --桌子白板
         BilliardsAniMgr:setHeadTimerAni(self.profressTimer2,g_EightBallData.operateTimer,nil)
+        BilliardsAniMgr:createUserFrameAni(self)
         self.cue.spriteLine:setVisible(false)
         self.cue.circleCheck:setVisible(false)
     end
@@ -350,6 +390,8 @@ function EightBallLayer:receiveHitWhiteBall(event)
             ball:stopTipsEffect()
         end
     end
+    --停止倒计时框
+    BilliardsAniMgr:setGameTips(self,g_EightBallData.gameRound.exception)
     BilliardsAniMgr:setDeskTempAni(self,false)
     self.slider_PowerBar:setPercent(0)
     m_rotateX = 0 m_rotateY = 0
@@ -358,6 +400,7 @@ function EightBallLayer:receiveHitWhiteBall(event)
     
     local progressTimer = player:getPlayerUserID() == event.UserID and self.profressTimer1 or self.profressTimer2
     BilliardsAniMgr:setHeadTimerAni(progressTimer,0,nil)
+    BilliardsAniMgr:createUserFrameAni(self,true)
 end
 
 function EightBallLayer:receiveHitBallResult(event)
@@ -367,8 +410,12 @@ function EightBallLayer:receiveHitBallResult(event)
 
     local progressTimer1 = player:getPlayerUserID() == event.UserID and self.profressTimer1 or self.profressTimer2
     local progressTimer2 = player:getPlayerUserID() == event.UserID and self.profressTimer2 or self.profressTimer1
-    BilliardsAniMgr:setHeadTimerAni(progressTimer1,g_EightBallData.operateTimer,nil)
+    local timerCallBack = function()
+        BilliardsAniMgr:setGameTips(self,-2)
+    end
+    BilliardsAniMgr:setHeadTimerAni(progressTimer1,g_EightBallData.operateTimer,timerCallBack)
     BilliardsAniMgr:setHeadTimerAni(progressTimer2,0,nil)
+    BilliardsAniMgr:createUserFrameAni(self,true)
 
     EightBallGameManager:clearBallsProcess()
     -- 清除本地球过程统计数组
@@ -377,8 +424,8 @@ function EightBallLayer:receiveHitBallResult(event)
     if not m_ballCheckStopSchedulerEntry and not EightBallGameManager:getIsSyncHitResult() then
         local delayTime = event.WholeFrame * g_EightBallData.netSynchronizationRate - mTime
         delayTime = delayTime > 0 and delayTime or 0
-        print(" the delay time of sync hit result = ", event.WholeFrame, event.WholeFrame * g_EightBallData.netSynchronizationRate, mTime)
-        self:runAction(cc.Sequence:create(cc.DelayTime:create(delayTime + g_EightBallData.sendHitResultInterval --[[+ g_EightBallData.receiveHitWhiteBallInterval--]]),
+        print(" the delay time of sync hit result = ", delayTime, event.WholeFrame,mTime)
+        self:runAction(cc.Sequence:create(cc.DelayTime:create(delayTime + g_EightBallData.receiveHitWhiteBallInterval --[[+ g_EightBallData.receiveHitWhiteBallInterval--]]),
         cc.CallFunc:create( function()
             EightBallGameManager:syncHitResult(self)
         end )))
@@ -390,6 +437,9 @@ function EightBallLayer:receiveGameOver(event)
     dump(event)
     EBGameControl:setGameState(g_EightBallData.gameState.gameOver)
     display.getRunningScene():addChild(require("gameBilliards.app.layer.EightBallGameOverLayer").new(event))
+    BilliardsAniMgr:createUserFrameAni(self, true)
+    BilliardsAniMgr:setHeadTimerAni(self.profressTimer1, 0, nil)
+    BilliardsAniMgr:setHeadTimerAni(self.profressTimer2, 0, nil)
     -- 测试
     -----------------------------------------------------------------------------
 --    local _key = G_PlayerInfoList:keyFind(player:getPlayerUserID())
@@ -404,8 +454,8 @@ end
 
 function EightBallLayer:receiveResume(event)
     print("EightBallLayer:receiveResume")
-    --dump(event)
-    EBGameControl:doInRoomSuccess()
+    dump(event)
+    self:cleanWaitPanel()
     self:showOriginRolePanel()
     EBGameControl:dealGameResume(event)
 end
@@ -415,25 +465,30 @@ function EightBallLayer:showOriginRolePanel()
     dmgr:initPlayerInfoList()
     local playerList = dmgr:getDeskPlayerInfoList()
     print("(player:getMySeatID()+3)%2 ",(player:getMySeatID() + 1) % 2 + 1)
-    self:showCareerByIndex(1, player:getPlayerHead())
+    self:showCareerByIndex(1, player:getPlayerHead(),player:getPlayerNickName())
     if #playerList > 1 then
         --另一个人
         local index = playerList[1].User.UserInfo.UserID == player:getPlayerUserID() and 2 or 1
-        self:showCareerByIndex(2, playerList[index].User.UserInfo.Head)
+        self:showCareerByIndex(2, playerList[index].User.UserInfo.Head,playerList[index].User.UserInfo.NickName)
     end
 end
 
-function EightBallLayer:showCareerByIndex(nIndex, nHead)
-    print("showCareerByIndex ", nIndex, nHead)
+function EightBallLayer:showCareerByIndex(nIndex, nHead ,nickName)
+    print("showCareerByIndex ", nIndex, nHead,nickName)
     if nHead < 0 and nIndex == 2 then
         self.userHead2:setVisible(false)
+        self.userName2:setString("")
         return
     end
     local head = nIndex == 1 and self.userHead1 or self.userHead2
+    local name = nIndex == 1 and self.userName1 or self.userName2
     if head then
         head:setVisible(true)
         head:loadTexture(tool.getHeadImgById(nHead, true), UI_TEX_TYPE_LOCAL)
         head:setContentSize(cc.size(136, 136))
+    end
+    if name then
+        name:setString(nickName)
     end
 end
 
@@ -473,6 +528,7 @@ function EightBallLayer:initPowerBar(img_PowerBar)
                 self.cue:setPercent(0)
                 -- 练习模式不打开定时器,连续打开两次会卡
                 if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
+                    BilliardsAniMgr:setGameTips(self,g_EightBallData.gameRound.exception)
                     self:openCheckStopTimeEntry()
                 end
                 m_rotateX = 0 m_rotateY = 0
@@ -490,11 +546,12 @@ function EightBallLayer:initPowerBar(img_PowerBar)
             self.whiteBall:getPhysicsBody():setContactTestBitmask(0x01)
             self.whiteBall:getPhysicsBody():setCollisionBitmask(0x03)
         --滑动条percent发生改变
-        elseif eventType == ccui.SliderEventType.percentChanged then
+        elseif eventType == ccui.SliderEventType.percentChanged or eventType == ccui.SliderEventType.slideBallDown then
             local percent = self.slider_PowerBar:getPercent()
             self.slider_View:setPercent(percent)
             self.cue:setPercent(percent)
             self.slider_View:setVisible(true)
+            BilliardsAniMgr:createPowerNumEffet(self.powerNum, percent)
         end
     end
     self.slider_PowerBar = img_PowerBar:getChildByTag(nSlider_PowerBar)
@@ -504,6 +561,8 @@ function EightBallLayer:initPowerBar(img_PowerBar)
     self.slider_View = self.node:getChildByTag(nSlider_View)
     self.slider_View:setTouchEnabled(false)
     self.slider_View:setVisible(false)
+    self.powerNum = self.slider_View:getChildByTag(nSprite_PowerNum)
+    self.powerNum:setCameraMask(cc.CameraFlag.USER3)
 end
 
 local mSpeedCount = 0
@@ -536,12 +595,18 @@ function EightBallLayer:refreshBallAni(tagA,tagB)
         ball = self.desk:getChildByTag(tagA)
         if ball then
             ball:adjustBallSpeed(mTime)
+            if ball:getBallState() == g_EightBallData.ballState.stop then
+                ball:setBallState(g_EightBallData.ballState.run) 
+            end
         end
     end
     if tagB >= 0 and tagB <= 15 then
         ball = self.desk:getChildByTag(tagB)
         if ball then
             ball:adjustBallSpeed(mTime)
+            if ball:getBallState() == g_EightBallData.ballState.stop then
+                ball:setBallState(g_EightBallData.ballState.run) 
+            end
         end
     end
 end
@@ -585,9 +650,20 @@ end
 local test = 1
 --测试用的重置界面按钮事件
 function EightBallLayer:resetBalls()
-    --self:receiveGameOver(nil)
-    --EBGameControl:setSuitCuePos()
-    --BilliardsAniMgr:setHeadTimerAni(self.profressTimer1,20,nil)
+--    if 1==1 then
+--        BilliardsAniMgr:createLinkEffect(self,15)
+--    end
+--    if 1 == 1 then
+--        local timerCallBack = function(data)
+--            BilliardsAniMgr:setGameTips(self,-2)
+--        end
+--        EBGameControl:setGameState(2)
+--        BilliardsAniMgr:setHeadTimerAni(self.profressTimer1, 20, timerCallBack)
+--        return
+--    end
+    -- self:receiveGameOver(nil)
+    -- EBGameControl:setSuitCuePos()
+    -- BilliardsAniMgr:setHeadTimerAni(self.profressTimer1,20,nil)
     -- if 1==1 then
     --     local ball = self.desk:getChildByTag(test)
     --     if ball then
@@ -600,18 +676,18 @@ function EightBallLayer:resetBalls()
     --     return
     -- end
     ------------------------------------------------------------------------------------------------------------------
---    rmgr:setIsChangeGamePlayer(false)
---    local _key = G_PlayerInfoList:keyFind(player:getPlayerUserID())
---    local requestData = {
---        tableID = G_PlayerInfoList[_key].TableID,
---        seatID = G_PlayerInfoList[_key].SeatID,
---    }
---    ClientNetManager.getInstance():requestCmd(g_Room_REQ_LEAVETABLE, requestData, G_ProtocolType.Room)
+    --    rmgr:setIsChangeGamePlayer(false)
+    --    local _key = G_PlayerInfoList:keyFind(player:getPlayerUserID())
+    --    local requestData = {
+    --        tableID = G_PlayerInfoList[_key].TableID,
+    --        seatID = G_PlayerInfoList[_key].SeatID,
+    --    }
+    --    ClientNetManager.getInstance():requestCmd(g_Room_REQ_LEAVETABLE, requestData, G_ProtocolType.Room)
     ------------------------------------------------------------------------------------------------------------------
-    --BilliardsAniMgr:createLinkEffect(self,test)
-    --BilliardsAniMgr:createWordEffect(self,test)
-    --test = test + 1
-    
+    -- BilliardsAniMgr:createLinkEffect(self,test)
+    -- BilliardsAniMgr:createWordEffect(self,test)
+    -- test = test + 1
+
     self.slider_PowerBar:setTouchEnabled(true)
     self:restart()
     EBGameControl:startGame()
@@ -678,24 +754,31 @@ end
 
 --游戏重新开始
 function EightBallLayer:restart()
+    EBGameControl:setGameState(g_EightBallData.gameState.practise)
     EightBallGameManager:initialize()  --初始化一些游戏step成员变量
+    mIsSettingNode = false
     self:resetHeadFrame()
     self:closeSyncBallTimeEnter()
     self:closeCheckStopTimeEntry()
+    player:setIsAuditionTime(false)
 end
 
 --头像框重置
 function EightBallLayer:resetHeadFrame()
-    for j=1,2 do
-        local headFrame = self.node:getChildByTag(nPanel_Users):getChildByTag(nImg_User1+j-1)
-        if headFrame then
-            for i=1,15 do
-                local ballTip = headFrame:getChildByTag(i)
-                if ballTip then
-                    ballTip:setVisible(false)
+    local panel_User = self.node:getChildByTag(nPanel_Users)
+    if panel_User then
+        for j = 1, 2 do
+            local headFrame = panel_User:getChildByTag(nImg_User1 + j - 1)
+            if headFrame then
+                for i = 1, 15 do
+                    local ballTip = headFrame:getChildByTag(i)
+                    if ballTip then
+                        ballTip:setVisible(false)
+                    end
                 end
             end
         end
+        BilliardsAniMgr:createUserFrameAni(self, true) --去除头像框动画
     end
 end
 
@@ -754,7 +837,7 @@ function EightBallLayer:openSyncBallTimeEntry()
             ----------------------------------------------------------------------------------------------------------------------------------
 
             local ball
-            --print(" the count of sync ball array = ",#syncArray,mSyncFrameIndex)
+            --_print(" the count of sync ball array = ",#syncArray,mSyncFrameIndex)
             if syncArray and #syncArray > mSyncFrameIndex then
                 local array = syncArray[mSyncFrameIndex].BallInfoArray
                 for i=1,#array do
@@ -787,27 +870,28 @@ function EightBallLayer:openCheckStopTimeEntry()
     --_print("****************openCheckStopTimeEntry****************")
     local function checkCueVisibleState(dt)
         mTime = mTime + g_EightBallData.checkStopTimerInterval
-        local isAllBallStop = false  --球是否全部停止
-
+        local isAllBallStop = true  --球是否全部停止
         local ball
-        local isBallStop
+        --local isBallStop
         for i = 0, 15 do
             ball = self.desk:getChildByTag(i)
             if ball then
-                isBallStop = ball:checkIsStop()
-                if isBallStop then
-                    ball:resetForceAndEffect()
-                elseif isBallStop == false then
-                    isAllBallStop = true
+                if ball:checkIsStop() then
+                    if ball:getBallState() == g_EightBallData.ballState.run then
+                        ball:resetForceAndEffect() 
+                    end
+                else
+                    isAllBallStop = false
                 end
             end
         end
 
-        if not isAllBallStop then
+        if isAllBallStop then
             if self and not tolua.isnull(self) then
                 --练习模式下处理
                 if not self.whiteBall:getIsInHole() and EBGameControl:getGameState() == g_EightBallData.gameState.practise then
                     self.cue:setCueLineCircleVisible(true)
+                    self.cue:setRotationOwn(self.cue:getRotation(),self)
                     if EightBallGameManager:getLinkCount() > 1 then
                         BilliardsAniMgr:createLinkEffect(self,EightBallGameManager:getLinkCount())
                     end
@@ -819,6 +903,8 @@ function EightBallLayer:openCheckStopTimeEntry()
                 if EBGameControl:getGameState() == g_EightBallData.gameState.practise then
                     BilliardsAniMgr:setSliderBarAni(true,self)
                     self:closeCheckStopTimeEntry()
+                    EightBallGameManager:setCanRefreshBallAni(false)
+                    EBGameControl:checkRestartGame()
                 end
 
                 if EBGameControl:getGameState() == g_EightBallData.gameState.practise and self.whiteBall:getIsInHole() then
@@ -843,7 +929,6 @@ function EightBallLayer:openCheckStopTimeEntry()
                     EBGameControl:sendHitBallsResult(EightBallGameManager:getCurrentUserID()) --发送击球结果消息
                 end)))
                 self:closeSyncBallTimeEnter()
-                --EightBallGameManager:setCanRefreshBallAni(false)
             end
             self.whiteBall:runAction(cc.Sequence:create(cc.DelayTime:create(g_EightBallData.sendHitResultInterval),cc.CallFunc:create(function ()
                 self:closeCheckStopTimeEntry()
@@ -874,30 +959,49 @@ end
 
 function EightBallLayer:onEnter()
     print("EightBallLayer:onEnter")
-    DisplayObserver.getInstance():addDisplayByName("EightBallLayer",self)
+    DisplayObserver.getInstance():addDisplayByName("EightBallLayer", self)
+    G_IsInGame = true
+    self:restart()
+
+    --预加载声音
+    EightBallGameManager:preLoadBilliardsEffect()
 
     --------------------------------------------------------------------------------------------------------------------------
-    -- 测试
-    rmgr.registerEvents()
-     g_IsSendRequest = true
-    -- 开始发送房间心跳包
-    ClientNetManager.getInstance():keepRoomAlive()
-    ClientNetManager.getInstance():Connect("192.168.0.250", 19809, G_ProtocolType.EIGHTBALL)
+    --如果是海选
+    if self.isAudition then
+        --ClientNetManager.getInstance():Connect("192.168.0.250", 19893, G_ProtocolType.EIGHTBALL)
+        rmgr:connectAuditionRoom(G_GameType.EIGHTBALL)
+    elseif G_isTestBilliards then
+    --elseif 1==1 then
+        -- 测试
+        rmgr.registerEvents()
+        g_IsSendRequest = true
+        -- 开始发送房间心跳包
+        ClientNetManager.getInstance():keepRoomAlive()
+        --ClientNetManager.getInstance():Connect("61.172.243.194", 19333, G_ProtocolType.EIGHTBALL)
+        ClientNetManager.getInstance():Connect("192.168.0.250", 19893, G_ProtocolType.EIGHTBALL)
+        --ClientNetManager.getInstance():Connect("61.172.243.194", 19333, G_ProtocolType.EIGHTBALL)
+    else
+        if not G_Game_Resume then
+            rmgr:connectRoom()
+        else
+            rmgr:resumeToConnectRoom()
+            G_Game_Resume = false
+        end
+    end
     --------------------------------------------------------------------------------------------------------------------------
-
-    --加载3D物理
-    self.camera = require("gameBilliards/app/common/Camera3D").new(false,3.0,cc.CameraFlag.USER2)
+    -- 加载3D物理
+    self.camera = require("gameBilliards/app/common/Camera3D").new(false, 3.0, cc.CameraFlag.USER2)
     self:addChild(self.camera)
-    self.camera3 = require("gameBilliards/app/common/Camera3D").new(false,4.0,cc.CameraFlag.USER3)
+    self.camera3 = require("gameBilliards/app/common/Camera3D").new(false, 4.0, cc.CameraFlag.USER3)
     self:addChild(self.camera3)
-
     local physics3DWorld = cc.Director:getInstance():getRunningScene():getPhysics3DWorld()
-    physics3DWorld:setGravity(cc.vec3(0.0,0.0,0.0))
-    --加载2D物理
+    physics3DWorld:setGravity(cc.vec3(0.0, 0.0, 0.0))
+    -- 加载2D物理
     if g_EightBallData.isDebug then cc.Director:getInstance():getRunningScene():getPhysicsWorld():setDebugDrawMask(cc.PhysicsWorld.DEBUGDRAW_ALL) end
     cc.Director:getInstance():getRunningScene():getPhysicsWorld():setGravity(cc.p(0, 0))
     local function physicsFixedUpdate(delta)
-        if not EightBallGameManager:getCanRefreshBallAni() then return end --特定条件不跑物理世界，性能更优化
+        if not EightBallGameManager:getCanRefreshBallAni() then return end  -- 特定条件不跑物理世界，性能更优化
         for i = 1, g_EightBallData.freshCount do
             cc.Director:getInstance():getRunningScene():getPhysicsWorld():step(1 / g_EightBallData.screenRefreshRate)
         end
@@ -910,7 +1014,7 @@ end
 function EightBallLayer:onExit()
     print("EightBallLayer:onExit")
     DisplayObserver.getInstance():delDisplayByName("EightBallLayer")
-
+    G_IsInGame = false
      --测试
     ------------------------------------------------------------------------------------------------------------------
 --   rmgr:setIsChangeGamePlayer(false)
@@ -922,13 +1026,28 @@ function EightBallLayer:onExit()
 --   ClientNetManager.getInstance():requestCmd(g_Room_REQ_LEAVETABLE, requestData, G_ProtocolType.Room)
     ------------------------------------------------------------------------------------------------------------------
 
+    self:closeSyncBallTimeEnter()
+    self:closeCheckStopTimeEntry()
     ClientNetManager.getInstance():requestCmd(g_Room_REQ_LEAVETABLE, requestData, G_ProtocolType.Room)
     ClientNetManager.getInstance():closeRoomAlive()
     ClientNetManager.getInstance():Close(G_ProtocolType.Room)
     mTipBalls = {}
     if self and not tolua.isnull(self) then
+        if self.camera then
+            self.camera = nil
+        end
+        if self.camera3 then
+            self.camera3 = nil
+        end
+        --self:restart()
         self:stopAllActions()
         self:removeEvents()
+    end
+end
+
+function EightBallLayer:cleanWaitPanel()
+    if tool.cleanLoadingEffect then
+        tool:cleanLoadingEffect()
     end
 end
 

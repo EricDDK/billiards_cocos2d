@@ -6,7 +6,7 @@ local function createPhysicalBorderLine(pos1, pos2, root, tag, isBag)
     local border = cc.Node:create()
     border:setTag(tag)
     if not isBag then
-        border:setPhysicsBody(cc.PhysicsBody:createEdgeSegment(pos1, pos2, g_EightBallData.borderPhysicsMaterial,3.0))
+        border:setPhysicsBody(cc.PhysicsBody:createEdgeSegment(pos1, pos2, g_EightBallData.borderPhysicsMaterial,1.0))
         border:getPhysicsBody():setCategoryBitmask(0x01)
         border:getPhysicsBody():setContactTestBitmask(0x01)
         border:getPhysicsBody():setCollisionBitmask(0x03)
@@ -105,7 +105,7 @@ function PhyControl:createBagBorder(desk)
     createPhysicalBorderLine(cc.p( 3,470 ),cc.p( -11,470 ),desk,tag,true)
     createPhysicalBorderLine(cc.p( -11,470 ),cc.p( -21,463 ),desk,tag,true)
     createPhysicalBorderLine(cc.p( -21,463 ),cc.p( -21,35 ),desk,tag,true)
-    createPhysicalBorderLine(cc.p( -21,35 ),cc.p( -54,35 ),desk,tag,true)
+    createPhysicalBorderLine(cc.p( -21,35 ),cc.p( -54,35 ),desk,g_EightBallData.g_Border_Tag.bagBottom,true)  --袋子底部的tag是bagBottom 226
     createPhysicalBorderLine(cc.p( -54,35 ),cc.p( -54,492 ),desk,tag,true)
     createPhysicalBorderLine(cc.p( -54,492 ),cc.p( -45,505 ),desk,tag,true)
     createPhysicalBorderLine(cc.p( -45,505 ),cc.p( 5,505 ),desk,tag,true)
@@ -122,15 +122,16 @@ end
 
 --袋中球碰撞
 function PhyControl:dealInHoleBallCollision(ballA,ballB,desk)
+    print("deal In Hole Bal lCollision ")
     if ballA and ballB and desk then
         if ballA:getPositionY() < 475 and ballA:getPositionX() < -30 and ballB:getPositionY() < 475 and ballB:getPositionX() < -30 then
             ballA:resetForceAndEffect()
             ballB:resetForceAndEffect()
         end
     end
-    if EBGameControl:getIsBallAllStop() then
-        --EightBallGameManager:setCanRefreshBallAni(false)
-    end
+    -- if EBGameControl:getIsBallAllStop() then
+    --     EightBallGameManager:setCanRefreshBallAni(false)
+    -- end
 end
 
 local ballPosIndex = {
@@ -238,17 +239,23 @@ end
 function PhyControl:drawRouteDetection(rotate, cue, whiteBall, mainLayer)
     local _line = whiteBall:getChildByTag(g_EightBallData.g_Border_Tag.lineCheck)
     local _circle = _line:getChildByTag(g_EightBallData.g_Border_Tag.circleCheck)
+    local _whiteBallLine = _line:getChildByTag(g_EightBallData.g_Border_Tag.whiteBallLine)
+    local _colorBallLine = _line:getChildByTag(g_EightBallData.g_Border_Tag.colorBallLine)
 
     if EightBallGameManager:getCurrentUserID() ~= player:getPlayerUserID() and EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
         _line:setVisible(false)
         _circle:setVisible(false)
+        _whiteBallLine:setVisible(false)
+        _colorBallLine:setVisible(false)
         return
-    else
-        _line:setVisible(true)
-        _circle:setVisible(true)
+    -- else
+    --     _line:setVisible(true)
+    --     _circle:setVisible(true)
+    --     _whiteBallLine:setVisible(true)
+    --     _colorBallLine:setVisible(true)
     end
 
-     rotate = mathMgr:changeAngleTo0to360(360 - rotate - whiteBall:getRotation())
+    rotate = mathMgr:changeAngleTo0to360(360 - rotate - whiteBall:getRotation())
     local _rect = _line:getChildByTag(g_EightBallData.g_Border_Tag.cueCheck)
     local _rectTmp = _line:convertToWorldSpace(cc.p(_rect:getPositionX(), _rect:getPositionY()))
     local _rectPos = mainLayer.desk:convertToNodeSpace(cc.p(_rectTmp.x, _rectTmp.y))
@@ -257,6 +264,8 @@ function PhyControl:drawRouteDetection(rotate, cue, whiteBall, mainLayer)
     local _tmpCollisionBall = { }
     _line:setVisible(true)
     _circle:setVisible(true)
+    _whiteBallLine:setVisible(true)
+    _colorBallLine:setVisible(true)
     local _ball
     for i = 1, 15 do
         _ball = mainLayer.desk:getChildByTag(i)
@@ -286,10 +295,17 @@ function PhyControl:drawRouteDetection(rotate, cue, whiteBall, mainLayer)
         table.sort(_tmpCollisionBall, function(a, b) return(a.distance) <(b.distance) end)
         local _ballPos = { }
         _ballPos.x, _ballPos.y = mainLayer.desk:getChildByTag(_tmpCollisionBall[1].tag):getPosition()
-        local _value = mathMgr.getShortestDistanceBetweenPointAndLine(rotate, _ballPos, _whitePos, _radius)
+        local _value,_isUpOrDown = mathMgr.getShortestDistanceBetweenPointAndLine(rotate, _ballPos, _whitePos, _radius)
         _line:setContentSize(cc.size(_tmpCollisionBall[1].distance - _value - _radius, _line:getContentSize().height))
         _circle:setPosition(cc.p((_tmpCollisionBall[1].distance - _value), _line:getContentSize().height/2))
-        --_circle:setVisible(true)
+
+        local angle = math.asin(_value/_radius/2)*180/math.pi
+        _whiteBallLine:setPosition(cc.p(_tmpCollisionBall[1].distance - _value, _line:getContentSize().height/2))
+        _whiteBallLine:setRotation( _isUpOrDown * angle)
+        _whiteBallLine:setContentSize(cc.size(90-angle+_radius,_whiteBallLine:getContentSize().height))
+        _colorBallLine:setPosition(cc.p(_tmpCollisionBall[1].distance - _value, _line:getContentSize().height/2))
+        _colorBallLine:setRotation(_isUpOrDown * angle - _isUpOrDown * 90)
+        _colorBallLine:setContentSize(cc.size(angle+_radius,_whiteBallLine:getContentSize().height))
 
         -- 1是默认值，白圈判定
         if EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
@@ -299,10 +315,14 @@ function PhyControl:drawRouteDetection(rotate, cue, whiteBall, mainLayer)
                     cue:setCircleByLegal(true)
                 else
                     cue:setCircleByLegal(false)
+                    _whiteBallLine:setVisible(false)
+                    _colorBallLine:setVisible(false)
                 end
             elseif ( _tmpCollisionBall[1].tag >= 8 and myColor == g_EightBallData.HitColor.full) 
             or (_tmpCollisionBall[1].tag <= 8 and myColor == g_EightBallData.HitColor.half) then
                 cue:setCircleByLegal(false)
+                _whiteBallLine:setVisible(false)
+                _colorBallLine:setVisible(false)
             else
                 cue:setCircleByLegal(true)
             end
@@ -312,6 +332,8 @@ function PhyControl:drawRouteDetection(rotate, cue, whiteBall, mainLayer)
         _circle:setPosition(cc.p(_value, _line:getContentSize().height/2))
         _line:setContentSize(cc.size(_value - _radius, _line:getContentSize().height))
         cue:setCircleByLegal(true)
+        _whiteBallLine:setVisible(false)
+        _colorBallLine:setVisible(false)
     end
 end
 
