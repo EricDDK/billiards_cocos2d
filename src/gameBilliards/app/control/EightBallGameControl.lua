@@ -237,11 +237,11 @@ function EBGameControl:ballInHole(nTag, nNode)
                 if ball:getTag() == 0 then
                     print("white ball in hole animation is done",ball:getIsInHole())
 
-                    if ball:getIsInHole() then
-                        if EightBallGameManager:getIsSyncHitResult() and EBGameControl:getIsBallAllStop() and m_MainLayer:isTimeEnteryStop() then
-                            EBGameControl:dealWhiteBallInHole()  -- 处理白球落袋
-                        end
-                    end
+                    -- if ball:getIsInHole() then
+                    --     if EightBallGameManager:getIsSyncHitResult() and EBGameControl:getIsBallAllStop() and m_MainLayer:isTimeEnteryStop() then
+                    --         EBGameControl:dealWhiteBallInHole()  -- 处理白球落袋
+                    --     end
+                    -- end
 
                 -- EBGameControl:dealWhiteBallInHole()--处理白球落袋
                 elseif ball:getTag() == 8 then
@@ -951,6 +951,9 @@ end
 
 --封装一下(发送协议)
 function EBGameControl:requestEightBallCmd(methodID,requestData)
+    if player:getIsGM() then
+        return
+    end
     if EBGameControl:getGameState() ~= g_EightBallData.gameState.practise then
         ClientNetManager.getInstance():requestCmd(methodID, requestData, G_ProtocolType.EIGHTBALL)
     end

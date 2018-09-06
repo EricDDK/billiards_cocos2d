@@ -56,7 +56,7 @@ local Gravity                                           = -9.8  --重力 （cons
 
 EightBallDefine.ReservedDigit                           = 10  --精确到小数第几位
 
-EightBallDefine.freshCount                              = 4  --刷新频率const，越高增加精度(莫动)，越高越卡，每秒检测次数 （const）
+EightBallDefine.freshCount                              = 5  --刷新频率const，越高增加精度(莫动)，越高越卡，每秒检测次数 （const）
 
 EightBallDefine.screenRefreshRate                       = EightBallDefine.freshCount*60.0  --勿动，屏幕帧率，现在是5*60=300 （const）
 

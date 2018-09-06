@@ -240,7 +240,7 @@ end
 --@rotate 旋转的角度
 function Cue:setRotationOwn(rotate,rootNode)
     if rotate == 0 then
-        rotate = 0.1
+        rotate = math.random(-5,5)/50
     end
     self:setRotation(rotate)
     if self.spriteLine then

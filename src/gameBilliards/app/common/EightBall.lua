@@ -45,9 +45,9 @@ end
 
 -- 检测球是否速度足够小可以停止转动
 function EightBall:checkIsStop()
-    if self:getBallState() == g_EightBallData.ballState.stop then
-        return true
-    end
+--    if self:getBallState() == g_EightBallData.ballState.stop then
+--        return true
+--    end
     local _velocity = self:getPhysicsBody():getVelocity()
     if math.abs(_velocity.x) >= g_EightBallData.ballVelocityLimit
         or math.abs(_velocity.y) >= g_EightBallData.ballVelocityLimit then
@@ -390,9 +390,9 @@ end
 --@ event 球信息
 --@ isResume 是否是断线重连
 function EightBall:syncBallState(event,isResume)
-    if event.fPositionX <= g_EightBallData.inBagPos.x then
-        return
-    end
+--    if event.fPositionX <= g_EightBallData.inBagPos.x then
+--        return
+--    end
     --解决球会从洞里同步出来
     if self:getBallState() == g_EightBallData.ballState.inHole and event.fPositionX > 0 then
         self:getPhysicsBody():resetForces()
@@ -404,13 +404,16 @@ end
 -- 获取球帧同步信息
 function EightBall:getBallSyncState(syncArray)
     local _velocity = self:getPhysicsBody():getVelocity()
-    if _velocity.x == 0 and _velocity.y == 0 then
-        return
-    end
     local _positionX, _positionY = self:getPosition()
-    if _positionX < g_EightBallData.inBagPos.x then
-        return
-    end
+
+    -- if _velocity.x == 0 and _velocity.y == 0 then
+    --     return
+    -- end
+    
+--    if _positionX < g_EightBallData.inBagPos.x then
+--        return
+--    end
+
     -- local _angularVelocity = self:getPhysicsBody():getAngularVelocity()
     -- local _unevenBarsForce = self:getWhiteBallContinuesForce()
     -- local _prickStrokeForce = cc.p(0.0, 0.0)

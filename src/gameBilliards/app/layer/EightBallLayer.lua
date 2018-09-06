@@ -149,7 +149,17 @@ function EightBallLayer:initView(isResume)
         self.btn_reset = self.node:getChildByTag(64)
         self.btn_reset:addTouchEventListener(btnCallback)
         if not G_isDebug then
-            self.btn_reset:setVisible(false) 
+            self.btn_reset:setVisible(false)
+        else
+            self.btn_reset:setPosition(cc.p(1100,25))
+        end
+
+        self.btn_Watch = self.node:getChildByTag(65)
+        self.btn_Watch:addTouchEventListener(btnCallback)
+        if player:getIsGM() then
+            self.btn_Watch:setVisible(true)
+        else
+            self.btn_Watch:setVisible(false)
         end
 
         self.panel_setting = self.node:getChildByTag(nPanel_Setting)
@@ -192,6 +202,7 @@ function EightBallLayer:registerEvents()
     eventRoomListeners[g_Room_NTF_PLAYERRECONNECT] = handler(self, self.receivePlayerConnecte)-- 玩家重连啦
     eventRoomListeners[g_Room_NTF_TABLECHAT] = handler(self, self.receiveTableChat)-- 桌子聊天
     eventRoomListeners[g_Room_NTF_ROOMMESSAGE] = handler(self, self.receiveRoomMessage)-- 房间内消息
+    eventRoomListeners[g_Room_NTF_POPUPMESSAGE] = handler(self, self.receivePopupMessage)
 
     -- 游戏内事件
     eventListeners[g_EIGHTBALL_NTF_GAMESTART] = handler(self, self.receiveGameStart)
@@ -233,8 +244,13 @@ function EightBallLayer:receiveLeaveTable(event)
     dmgr:playerLeaveTable(event)
     if event.tableID == player:getMyTableID() then
         if event.seatID == player:getMySeatID() and event.userID == player:getPlayerUserID() then
-            print("you leave the table ")
-            EBGameControl:leaveGame()
+            print("you leave the table")
+            local isFinal =(self.isAudition and G_Is_Eightball_Final) and true or false
+            if isFinal then
+                
+            else
+                EBGameControl:leaveGame() 
+            end
         else
             local playerInfo = dmgr:getPlayerInfoByTableIdAndSeatIdInTable(event.tableID, event.seatID)
             if playerInfo then
@@ -283,6 +299,20 @@ function EightBallLayer:receiveRoomMessage(event)
         display.getRunningScene():addChild(require("hallcenter.widgets.CommonMsgBoxWidget").new(dataMsgBox))
     end
     --EBGameControl:leaveGame()
+end
+
+function EightBallLayer:receivePopupMessage(event)
+    print("[EightBallLayer:receivePopupMessage]:message = ", event.message)
+    local back = function(isOK)
+        --EBGameControl:leaveGame()
+    end
+    local dataMsgBox = {
+        nodeParent = nil,
+        msgboxType = MSGBOX_TYPE_UPDATE,
+        msgInfo = event.message,
+        callBack = back,
+    }
+    display.getRunningScene():addChild(require("hallcenter.widgets.CommonMsgBoxWidget").new(dataMsgBox))
 end
 
 function EightBallLayer:receiveTableInfo(event)
@@ -358,7 +388,7 @@ function EightBallLayer:receiveSetCueInfo(event)
 end
 
 function EightBallLayer:receiveSyncBallInfo(event)
-    --print("EightBallLayer:receiveSyncBallInfo")
+    --print("[EightBallLayer:receiveSyncBallInfo]")
     --dump(event.BallInfoArray)
     if event.UserID ~= player:getPlayerUserID() then
         EightBallGameManager:insertSyncBallArray(event,event.FrameIndex)
@@ -436,7 +466,10 @@ function EightBallLayer:receiveGameOver(event)
     print("EightBallLayer:receiveGameOver")
     dump(event)
     EBGameControl:setGameState(g_EightBallData.gameState.gameOver)
-    display.getRunningScene():addChild(require("gameBilliards.app.layer.EightBallGameOverLayer").new(event))
+    --必须是海选+总决赛才是true
+    local isFinal = (self.isAudition and G_Is_Eightball_Final) and true or false
+    print("isFinal = ",isFinal,self.isAudition,G_Is_Eightball_Final)
+    display.getRunningScene():addChild(require("gameBilliards.app.layer.EightBallGameOverLayer").new(event,isFinal))
     BilliardsAniMgr:createUserFrameAni(self, true)
     BilliardsAniMgr:setHeadTimerAni(self.profressTimer1, 0, nil)
     BilliardsAniMgr:setHeadTimerAni(self.profressTimer2, 0, nil)
@@ -465,16 +498,19 @@ function EightBallLayer:showOriginRolePanel()
     dmgr:initPlayerInfoList()
     local playerList = dmgr:getDeskPlayerInfoList()
     print("(player:getMySeatID()+3)%2 ",(player:getMySeatID() + 1) % 2 + 1)
-    self:showCareerByIndex(1, player:getPlayerHead(),player:getPlayerNickName())
+
     if #playerList > 1 then
-        --另一个人
-        local index = playerList[1].User.UserInfo.UserID == player:getPlayerUserID() and 2 or 1
-        self:showCareerByIndex(2, playerList[index].User.UserInfo.Head,playerList[index].User.UserInfo.NickName)
+        for i = 1, #playerList do
+            if playerList[i].SeatID == player:getMySeatID() then
+                self:showCareerByIndex(1, playerList[i].User.UserInfo.Head, playerList[i].User.UserInfo.NickName)
+            else
+                self:showCareerByIndex(2, playerList[i].User.UserInfo.Head, playerList[i].User.UserInfo.NickName)
+            end
+        end
     end
 end
 
 function EightBallLayer:showCareerByIndex(nIndex, nHead ,nickName)
-    print("showCareerByIndex ", nIndex, nHead,nickName)
     if nHead < 0 and nIndex == 2 then
         self.userHead2:setVisible(false)
         self.userName2:setString("")
@@ -630,6 +666,8 @@ function EightBallLayer:btnCallback(sender, eventType)
         amgr.playEffect("hall_res/button.mp3")
         if nTag == 64 then
             self:resetBalls()
+        elseif nTag == 65 then
+            self:watch()
         elseif nTag == nImg_UpBall then
             self:openWhiteBallLayer()
         elseif nTag == nBtn_Setting then
@@ -650,6 +688,7 @@ end
 local test = 1
 --测试用的重置界面按钮事件
 function EightBallLayer:resetBalls()
+    EBGameControl:ballInHole(0, self.desk:getChildByTag(g_EightBallData.g_Border_Tag.hole))
 --    if 1==1 then
 --        BilliardsAniMgr:createLinkEffect(self,15)
 --    end
@@ -688,9 +727,14 @@ function EightBallLayer:resetBalls()
     -- BilliardsAniMgr:createWordEffect(self,test)
     -- test = test + 1
 
-    self.slider_PowerBar:setTouchEnabled(true)
-    self:restart()
-    EBGameControl:startGame()
+--    self.slider_PowerBar:setTouchEnabled(true)
+--    self:restart()
+--    EBGameControl:startGame()
+end
+
+--观战
+function EightBallLayer:watch()
+    display.getRunningScene():addChild(require("hallcenter.widgets.Audition.EightBallFinalGM").new())
 end
 
 --打开高低杆界面
@@ -723,27 +767,35 @@ function EightBallLayer:openSettingNode()
     end
 end
 
---返回大厅
+-- 返回大厅
 function EightBallLayer:goBack()
+    if player:getIsGM() then
+        EBGameControl:leaveGame()
+    end
+    local isFinal =(self.isAudition and G_Is_Eightball_Final) and true or false
     if EBGameControl:getGameState() == g_EightBallData.gameState.practise or EBGameControl:getGameState() == g_EightBallData.gameState.gameOver then
         EBGameControl:leaveGame()
     else
-        local backCallback = function()
-            rmgr:setIsChangeGamePlayer(false)
-            local _key = G_PlayerInfoList:keyFind(player:getPlayerUserID())
-            local requestData = {
-                tableID = G_PlayerInfoList[_key].TableID,
-                seatID = G_PlayerInfoList[_key].SeatID,
-            }
-            ClientNetManager.getInstance():requestCmd(g_Room_REQ_LEAVETABLE, requestData, G_ProtocolType.Room)
-            if self and not tolua.isnull(self) then
-                self:runAction(cc.Sequence:create(cc.DelayTime:create(4), cc.CallFunc:create( function()
-                    EBGameControl:leaveGame()
-                end )))
+        if isFinal then
+            tool.openNetTips("决赛房间不能退出!")
+        else
+            local backCallback = function()
+                rmgr:setIsChangeGamePlayer(false)
+                local _key = G_PlayerInfoList:keyFind(player:getPlayerUserID())
+                local requestData = {
+                    tableID = G_PlayerInfoList[_key].TableID,
+                    seatID = G_PlayerInfoList[_key].SeatID,
+                }
+                ClientNetManager.getInstance():requestCmd(g_Room_REQ_LEAVETABLE, requestData, G_ProtocolType.Room)
+                if self and not tolua.isnull(self) then
+                    self:runAction(cc.Sequence:create(cc.DelayTime:create(4), cc.CallFunc:create( function()
+                        EBGameControl:leaveGame()
+                    end )))
+                end
             end
+            local str = "现在退出不返还台费，\n你确定要退出嘛？"
+            display.getRunningScene():addChild(require("gameBilliards.app.layer.BilliardsCommonLayer").new(backCallback, str))
         end
-        local str = "现在退出不返还台费，\n你确定要退出嘛？"
-        display.getRunningScene():addChild(require("gameBilliards.app.layer.BilliardsCommonLayer").new(backCallback,str))
     end
 end
 
@@ -754,8 +806,20 @@ end
 
 --游戏重新开始
 function EightBallLayer:restart()
+    local function closeGameOverLayer()
+        print("local func closeGameOverLayer")
+        local layer = display.getRunningScene():getChildByName("GameOverLayer")
+        if layer then
+            print("local func closeGameOverLayer, layer is exist")
+            layer:stopAllActions()
+            layer:removeFromParent()
+            layer = nil
+        end
+    end
+    closeGameOverLayer()
     EBGameControl:setGameState(g_EightBallData.gameState.practise)
-    EightBallGameManager:initialize()  --初始化一些游戏step成员变量
+    EightBallGameManager:initialize()
+    -- 初始化一些游戏step成员变量
     mIsSettingNode = false
     self:resetHeadFrame()
     self:closeSyncBallTimeEnter()
@@ -969,8 +1033,13 @@ function EightBallLayer:onEnter()
     --------------------------------------------------------------------------------------------------------------------------
     --如果是海选
     if self.isAudition then
-        --ClientNetManager.getInstance():Connect("192.168.0.250", 19893, G_ProtocolType.EIGHTBALL)
-        rmgr:connectAuditionRoom(G_GameType.EIGHTBALL)
+        if G_Is_Eightball_Final then
+            --ClientNetManager.getInstance():Connect("192.168.0.250", 19895, G_ProtocolType.EIGHTBALL)
+            --ClientNetManager.getInstance():Connect("61.172.243.194", 19894, G_ProtocolType.EIGHTBALL)
+            ClientNetManager.getInstance():Connect("139.196.145.121", 19898, G_ProtocolType.EIGHTBALL)
+        else
+            rmgr:connectAuditionRoom(G_GameType.EIGHTBALL)
+        end
     elseif G_isTestBilliards then
     --elseif 1==1 then
         -- 测试
@@ -979,7 +1048,7 @@ function EightBallLayer:onEnter()
         -- 开始发送房间心跳包
         ClientNetManager.getInstance():keepRoomAlive()
         --ClientNetManager.getInstance():Connect("61.172.243.194", 19333, G_ProtocolType.EIGHTBALL)
-        ClientNetManager.getInstance():Connect("192.168.0.250", 19893, G_ProtocolType.EIGHTBALL)
+        --ClientNetManager.getInstance():Connect("192.168.0.250", 19809, G_ProtocolType.EIGHTBALL)
         --ClientNetManager.getInstance():Connect("61.172.243.194", 19333, G_ProtocolType.EIGHTBALL)
     else
         if not G_Game_Resume then
@@ -1046,6 +1115,7 @@ function EightBallLayer:onExit()
 end
 
 function EightBallLayer:cleanWaitPanel()
+    print("[EightBallLayer] cleanWaitPanel")
     if tool.cleanLoadingEffect then
         tool:cleanLoadingEffect()
     end

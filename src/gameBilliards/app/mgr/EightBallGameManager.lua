@@ -244,7 +244,13 @@ function EightBallGameManager:syncHitResult(rootNode, isResume)
     if ballsResultArray and next(ballsResultArray) then
         local ballsArray = ballsResultArray.BallInfoArray
         local ball
-        for i = 0, 15 do
+        -- 白球进洞或者击打犯规，处理白球进洞流程，单一入口
+        if rootNode.whiteBall:getIsInHole() or ballsResultArray.Result == g_EightBallData.gameRound.foul then
+            EBGameControl:dealWhiteBallInHole()
+        else
+            rootNode.whiteBall:setBallsResultState(ballsArray[g_EightBallData.g_Border_Tag.whiteBall + 1], rootNode)
+        end
+        for i = 1, 15 do
             ball = rootNode.desk:getChildByTag(i)
             if ball then
                 ball:setBallsResultState(ballsArray[i + 1], rootNode)
@@ -255,11 +261,6 @@ function EightBallGameManager:syncHitResult(rootNode, isResume)
                 end
             end
         end
-    end
-
-    -- 白球进洞或者击打犯规，处理白球进洞流程，单一入口
-    if rootNode.whiteBall:getIsInHole() or ballsResultArray.Result == g_EightBallData.gameRound.foul then
-        EBGameControl:dealWhiteBallInHole()
     end
 
     rootNode.cue:setRotationOwn(0, rootNode)  -- 击球结束同步一下结果
@@ -350,7 +351,7 @@ end
 --游戏轮次索引
 function EightBallGameManager:setGameRound(gameRound)
     if not gameRound then
-        print(" set game round param = null ",debug.traceback())
+        print(" set game round param = null ",gameRound)
         return
     end
     mGameRound = gameRound
