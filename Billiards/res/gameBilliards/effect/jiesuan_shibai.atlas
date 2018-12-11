@@ -1,0 +1,34 @@
+
+jiesuan_shibai.png
+size: 1024,512
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+guandan_jiesuan/shibai/lianyi_4
+  rotate: false
+  xy: 2, 79
+  size: 205, 70
+  orig: 205, 70
+  offset: 0, 0
+  index: -1
+guandan_jiesuan/shibai/shandian
+  rotate: false
+  xy: 2, 151
+  size: 565, 311
+  orig: 565, 311
+  offset: 0, 0
+  index: -1
+guandan_jiesuan/shibai/yudian_1
+  rotate: false
+  xy: 771, 444
+  size: 10, 18
+  orig: 10, 18
+  offset: 0, 0
+  index: -1
+guandan_jiesuan/shibai/yuncai
+  rotate: true
+  xy: 569, 2
+  size: 460, 200
+  orig: 460, 200
+  offset: 0, 0
+  index: -1
