@@ -1,6 +1,9 @@
 # Billiards cocos cocos2d-x 3.10 lua
 a Billiards game by cocos2d-x lua
 
+*此项目仅供学习参考，下载后请勿发于他人，48小时请删除，不得擅自用于商业用途，违者必究！
+*This item is for learning reference only. Please do not send it to others after downloading. Please delete it within 48 hours. It is not *allowed to be used for commercial purposes.
+
 cocos2d-x engine version 3.10
 lua version 5.1
 config on http://www.cocos.com/
