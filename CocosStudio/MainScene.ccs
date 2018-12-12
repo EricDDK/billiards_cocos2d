@@ -1,0 +1,310 @@
+<Solution>
+  <PropertyGroup Name="MainScene" Version="3.10.0.0" Type="CocosStudio" />
+  <SolutionFolder>
+    <Group ctype="ResourceGroup">
+      <RootFolder Name=".">
+        <Folder Name="fonts">
+          <TTF Name="FZY4JW.TTF" />
+        </Folder>
+        <Folder Name="gameBilliards">
+          <Folder Name="common">
+            <Image Name="eightBall_Background.png" />
+            <Image Name="eightBall_Btn_Back.png" />
+            <Image Name="eightBall_Btn_Close.png" />
+            <Image Name="eightBall_Btn_OpenClose.png" />
+            <Image Name="eightBall_Btn_Setting.png" />
+            <Image Name="eightBall_Btn1.png" />
+            <Image Name="eightBall_Btn2.png" />
+            <Image Name="eightBall_Btn3.png" />
+            <Image Name="eightBall_Btn4.png" />
+            <Image Name="eightBall_Btn5.png" />
+            <Image Name="eightBall_Head_Bg.png" />
+            <Image Name="eightBall_Line_CommonLayer.png" />
+            <Image Name="eightBall_Loading_RotateImage.png" />
+            <Image Name="eightBall_Panel_Back.png" />
+            <Image Name="eightBall_Panel_Bg.png" />
+            <Image Name="eightBall_Setting_Btn_Circle.png" />
+            <Image Name="eightBall_VS_Bg.png" />
+            <Image Name="eightBall_Word_BackHall.png" />
+            <Image Name="eightBall_Word_BlueCancle.png" />
+            <Image Name="eightBall_Word_Cancle.png" />
+            <Image Name="eightBall_Word_Confirm.png" />
+            <Image Name="eightBall_Word_GoFinish.png" />
+            <Image Name="eightBall_Word_Matching.png" />
+            <Image Name="eightBall_Word_PlayAgain.png" />
+            <Image Name="eightBall_Word_winner.png" />
+          </Folder>
+          <Folder Name="eightBall">
+            <Image Name="ball_0.png" />
+            <Image Name="ball_12.png" />
+            <Image Name="eightBall_Ball_Shadow.png" />
+            <Image Name="eightBall_BallBag_Bg.png" />
+            <Image Name="eightBall_Btn_Menu.png" />
+            <Image Name="eightBall_Cue_bar.png" />
+            <Image Name="eightBall_DeskImage.png" />
+            <Image Name="eightBall_DrawCircle.png" />
+            <Image Name="eightBall_Effect_Bg.png" />
+            <Image Name="eightBall_FineTurning_Back2.png" />
+            <Image Name="eightBall_FineTurning_Scale.png" />
+            <Image Name="eightBall_FineTurning_Tag.png" />
+            <Image Name="eightBall_FineTurningBg.png" />
+            <Image Name="eightBall_HighLowPole_Bg.png" />
+            <Image Name="eightBall_HighLowPole_BigWhiteBall.png" />
+            <Image Name="eightBall_HighLowPole_RedPint.png" />
+            <Image Name="eightBall_Img_VS.png" />
+            <Image Name="eightBall_PowerView.png" />
+            <Image Name="eightBall_PowerView_Back.png" />
+            <Image Name="eightBall_Sliderbar_Bg.png" />
+            <Image Name="eightBall_SliderBar_Cue.png" />
+            <Image Name="eightBall_SliderBar_Power.png" />
+            <Image Name="eightBall_SliderView_Inside.png" />
+            <Image Name="eightBall_Small_RedPoint.png" />
+            <Image Name="eightBall_Small_Whiteball.png" />
+            <Image Name="eightBall_TimeProgress.png" />
+            <Image Name="eightBall_Tips_Bg.png" />
+            <Image Name="eightBall_TransparentBall.png" />
+            <Image Name="eightBall_User2Inf_Bg.png" />
+            <Image Name="eightBall_UserInf_Bg.png" />
+            <Image Name="eightBall_VS_Dial.png" />
+            <Image Name="eightBall_WhiteBack.png" />
+            <Image Name="eightBall_WhiteBall_BigCircle.png" />
+          </Folder>
+          <Folder Name="image">
+            <Image Name="ball.png" />
+            <Image Name="ball_0.png" />
+            <Image Name="ball_1.png" />
+            <Image Name="ball_10.png" />
+            <Image Name="ball_11.png" />
+            <Image Name="ball_12.png" />
+            <Image Name="ball_13.png" />
+            <Image Name="ball_14.png" />
+            <Image Name="ball_15.png" />
+            <Image Name="ball_2.png" />
+            <Image Name="ball_3.png" />
+            <Image Name="ball_4.png" />
+            <Image Name="ball_5.png" />
+            <Image Name="ball_6.png" />
+            <Image Name="ball_7.png" />
+            <Image Name="ball_8.png" />
+            <Image Name="ball_9.png" />
+            <Image Name="ball_HighLight.png" />
+            <Image Name="ball_Shadow.png" />
+            <Image Name="ball_white.png" />
+            <Image Name="billiards_Bg.png" />
+            <Image Name="common_hongdian.png" />
+            <Image Name="table.png" />
+            <Image Name="test.png" />
+            <Image Name="testBall.png" />
+          </Folder>
+          <Folder Name="plist">
+            <PlistImageFolder Image="BilliardsCommon.png" PListFile="BilliardsCommon.plist" Name=".BilliardsCommon_PList.Dir">
+              <PlistImageFile Name="eightBall_Btn_Back.png" Key="eightBall_Btn_Back.png" />
+              <PlistImageFile Name="eightBall_Btn_Close.png" Key="eightBall_Btn_Close.png" />
+              <PlistImageFile Name="eightBall_Btn_OpenClose.png" Key="eightBall_Btn_OpenClose.png" />
+              <PlistImageFile Name="eightBall_Btn_Setting.png" Key="eightBall_Btn_Setting.png" />
+              <PlistImageFile Name="eightBall_Btn1.png" Key="eightBall_Btn1.png" />
+              <PlistImageFile Name="eightBall_Btn2.png" Key="eightBall_Btn2.png" />
+              <PlistImageFile Name="eightBall_Btn3.png" Key="eightBall_Btn3.png" />
+              <PlistImageFile Name="eightBall_Btn4.png" Key="eightBall_Btn4.png" />
+              <PlistImageFile Name="eightBall_Btn5.png" Key="eightBall_Btn5.png" />
+              <PlistImageFile Name="eightBall_Head_Bg.png" Key="eightBall_Head_Bg.png" />
+              <PlistImageFile Name="eightBall_Line_CommonLayer.png" Key="eightBall_Line_CommonLayer.png" />
+              <PlistImageFile Name="eightBall_Loading_RotateImage.png" Key="eightBall_Loading_RotateImage.png" />
+              <PlistImageFile Name="eightBall_Panel_Back.png" Key="eightBall_Panel_Back.png" />
+              <PlistImageFile Name="eightBall_Panel_Bg.png" Key="eightBall_Panel_Bg.png" />
+              <PlistImageFile Name="eightBall_Setting_Btn_Circle.png" Key="eightBall_Setting_Btn_Circle.png" />
+              <PlistImageFile Name="eightBall_VS_Bg.png" Key="eightBall_VS_Bg.png" />
+              <PlistImageFile Name="eightBall_Word_BackHall.png" Key="eightBall_Word_BackHall.png" />
+              <PlistImageFile Name="eightBall_Word_BlueCancle.png" Key="eightBall_Word_BlueCancle.png" />
+              <PlistImageFile Name="eightBall_Word_Cancle.png" Key="eightBall_Word_Cancle.png" />
+              <PlistImageFile Name="eightBall_Word_Confirm.png" Key="eightBall_Word_Confirm.png" />
+              <PlistImageFile Name="eightBall_Word_GoFinish.png" Key="eightBall_Word_GoFinish.png" />
+              <PlistImageFile Name="eightBall_Word_Matching.png" Key="eightBall_Word_Matching.png" />
+              <PlistImageFile Name="eightBall_Word_PlayAgain.png" Key="eightBall_Word_PlayAgain.png" />
+              <PlistImageFile Name="eightBall_Word_winner.png" Key="eightBall_Word_winner.png" />
+            </PlistImageFolder>
+            <PlistImageFolder Image="BilliardsFrameEffet.png" PListFile="BilliardsFrameEffet.plist" Name=".BilliardsFrameEffet_PList.Dir">
+              <PlistImageFile Name="userFrame01.png" Key="userFrame01.png" />
+              <PlistImageFile Name="userFrame02.png" Key="userFrame02.png" />
+              <PlistImageFile Name="userFrame03.png" Key="userFrame03.png" />
+              <PlistImageFile Name="userFrame04.png" Key="userFrame04.png" />
+              <PlistImageFile Name="userFrame05.png" Key="userFrame05.png" />
+              <PlistImageFile Name="userFrame06.png" Key="userFrame06.png" />
+              <PlistImageFile Name="userFrame07.png" Key="userFrame07.png" />
+              <PlistImageFile Name="userFrame08.png" Key="userFrame08.png" />
+              <PlistImageFile Name="userFrame09.png" Key="userFrame09.png" />
+              <PlistImageFile Name="userFrame10.png" Key="userFrame10.png" />
+              <PlistImageFile Name="userFrame11.png" Key="userFrame11.png" />
+              <PlistImageFile Name="userFrame12.png" Key="userFrame12.png" />
+              <PlistImageFile Name="userFrame13.png" Key="userFrame13.png" />
+              <PlistImageFile Name="userFrame14.png" Key="userFrame14.png" />
+              <PlistImageFile Name="userFrame15.png" Key="userFrame15.png" />
+              <PlistImageFile Name="userFrame16.png" Key="userFrame16.png" />
+              <PlistImageFile Name="userFrame17.png" Key="userFrame17.png" />
+              <PlistImageFile Name="userFrame18.png" Key="userFrame18.png" />
+              <PlistImageFile Name="userFrame19.png" Key="userFrame19.png" />
+              <PlistImageFile Name="userFrame20.png" Key="userFrame20.png" />
+              <PlistImageFile Name="userFrame21.png" Key="userFrame21.png" />
+              <PlistImageFile Name="userFrame22.png" Key="userFrame22.png" />
+              <PlistImageFile Name="userFrame23.png" Key="userFrame23.png" />
+              <PlistImageFile Name="userFrame24.png" Key="userFrame24.png" />
+              <PlistImageFile Name="userFrame25.png" Key="userFrame25.png" />
+              <PlistImageFile Name="userFrame26.png" Key="userFrame26.png" />
+              <PlistImageFile Name="userFrame27.png" Key="userFrame27.png" />
+              <PlistImageFile Name="userFrame28.png" Key="userFrame28.png" />
+              <PlistImageFile Name="userFrame29.png" Key="userFrame29.png" />
+              <PlistImageFile Name="userFrame30.png" Key="userFrame30.png" />
+              <PlistImageFile Name="userFrame31.png" Key="userFrame31.png" />
+              <PlistImageFile Name="userFrame32.png" Key="userFrame32.png" />
+              <PlistImageFile Name="userFrame33.png" Key="userFrame33.png" />
+              <PlistImageFile Name="userFrame34.png" Key="userFrame34.png" />
+              <PlistImageFile Name="userFrame35.png" Key="userFrame35.png" />
+              <PlistImageFile Name="userFrame36.png" Key="userFrame36.png" />
+              <PlistImageFile Name="userFrame37.png" Key="userFrame37.png" />
+              <PlistImageFile Name="userFrame38.png" Key="userFrame38.png" />
+              <PlistImageFile Name="userFrame39.png" Key="userFrame39.png" />
+              <PlistImageFile Name="userFrame40.png" Key="userFrame40.png" />
+              <PlistImageFile Name="userFrame41.png" Key="userFrame41.png" />
+              <PlistImageFile Name="userFrame42.png" Key="userFrame42.png" />
+              <PlistImageFile Name="userFrame43.png" Key="userFrame43.png" />
+              <PlistImageFile Name="userFrame44.png" Key="userFrame44.png" />
+              <PlistImageFile Name="userFrame45.png" Key="userFrame45.png" />
+              <PlistImageFile Name="userFrame46.png" Key="userFrame46.png" />
+              <PlistImageFile Name="userFrame47.png" Key="userFrame47.png" />
+              <PlistImageFile Name="userFrame48.png" Key="userFrame48.png" />
+              <PlistImageFile Name="userFrame49.png" Key="userFrame49.png" />
+              <PlistImageFile Name="userFrame50.png" Key="userFrame50.png" />
+              <PlistImageFile Name="userFrame51.png" Key="userFrame51.png" />
+              <PlistImageFile Name="userFrame52.png" Key="userFrame52.png" />
+              <PlistImageFile Name="userFrame53.png" Key="userFrame53.png" />
+              <PlistImageFile Name="userFrame54.png" Key="userFrame54.png" />
+              <PlistImageFile Name="userFrame55.png" Key="userFrame55.png" />
+              <PlistImageFile Name="userFrame56.png" Key="userFrame56.png" />
+              <PlistImageFile Name="userFrame57.png" Key="userFrame57.png" />
+              <PlistImageFile Name="userFrame58.png" Key="userFrame58.png" />
+              <PlistImageFile Name="userFrame59.png" Key="userFrame59.png" />
+              <PlistImageFile Name="userFrame60.png" Key="userFrame60.png" />
+              <PlistImageFile Name="userFrame61.png" Key="userFrame61.png" />
+              <PlistImageFile Name="userFrame62.png" Key="userFrame62.png" />
+              <PlistImageFile Name="userFrame63.png" Key="userFrame63.png" />
+              <PlistImageFile Name="userFrame64.png" Key="userFrame64.png" />
+              <PlistImageFile Name="userFrame65.png" Key="userFrame65.png" />
+              <PlistImageFile Name="userFrame66.png" Key="userFrame66.png" />
+              <PlistImageFile Name="userFrame67.png" Key="userFrame67.png" />
+              <PlistImageFile Name="userFrame68.png" Key="userFrame68.png" />
+              <PlistImageFile Name="userFrame69.png" Key="userFrame69.png" />
+              <PlistImageFile Name="userFrame70.png" Key="userFrame70.png" />
+              <PlistImageFile Name="userFrame71.png" Key="userFrame71.png" />
+              <PlistImageFile Name="userFrame72.png" Key="userFrame72.png" />
+              <PlistImageFile Name="userFrame73.png" Key="userFrame73.png" />
+              <PlistImageFile Name="userFrame74.png" Key="userFrame74.png" />
+              <PlistImageFile Name="userFrame75.png" Key="userFrame75.png" />
+              <PlistImageFile Name="userFrame76.png" Key="userFrame76.png" />
+              <PlistImageFile Name="userFrame77.png" Key="userFrame77.png" />
+              <PlistImageFile Name="userFrame78.png" Key="userFrame78.png" />
+              <PlistImageFile Name="userFrame79.png" Key="userFrame79.png" />
+              <PlistImageFile Name="userFrame80.png" Key="userFrame80.png" />
+              <PlistImageFile Name="userFrame81.png" Key="userFrame81.png" />
+              <PlistImageFile Name="userFrame82.png" Key="userFrame82.png" />
+              <PlistImageFile Name="userFrame83.png" Key="userFrame83.png" />
+              <PlistImageFile Name="userFrame84.png" Key="userFrame84.png" />
+              <PlistImageFile Name="userFrame85.png" Key="userFrame85.png" />
+              <PlistImageFile Name="userFrame86.png" Key="userFrame86.png" />
+              <PlistImageFile Name="userFrame87.png" Key="userFrame87.png" />
+              <PlistImageFile Name="userFrame88.png" Key="userFrame88.png" />
+              <PlistImageFile Name="userFrame89.png" Key="userFrame89.png" />
+              <PlistImageFile Name="userFrame90.png" Key="userFrame90.png" />
+            </PlistImageFolder>
+            <PlistImageFolder Image="EightBall.png" PListFile="EightBall.plist" Name=".EightBall_PList.Dir">
+              <PlistImageFile Name="ball_0.png" Key="ball_0.png" />
+              <PlistImageFile Name="ball_1.png" Key="ball_1.png" />
+              <PlistImageFile Name="ball_10.png" Key="ball_10.png" />
+              <PlistImageFile Name="ball_11.png" Key="ball_11.png" />
+              <PlistImageFile Name="ball_12.png" Key="ball_12.png" />
+              <PlistImageFile Name="ball_13.png" Key="ball_13.png" />
+              <PlistImageFile Name="ball_14.png" Key="ball_14.png" />
+              <PlistImageFile Name="ball_15.png" Key="ball_15.png" />
+              <PlistImageFile Name="ball_2.png" Key="ball_2.png" />
+              <PlistImageFile Name="ball_3.png" Key="ball_3.png" />
+              <PlistImageFile Name="ball_4.png" Key="ball_4.png" />
+              <PlistImageFile Name="ball_5.png" Key="ball_5.png" />
+              <PlistImageFile Name="ball_6.png" Key="ball_6.png" />
+              <PlistImageFile Name="ball_7.png" Key="ball_7.png" />
+              <PlistImageFile Name="ball_8.png" Key="ball_8.png" />
+              <PlistImageFile Name="ball_9.png" Key="ball_9.png" />
+              <PlistImageFile Name="eightBall_Ball_HighLight.png" Key="eightBall_Ball_HighLight.png" />
+              <PlistImageFile Name="eightBall_Ball_Shadow.png" Key="eightBall_Ball_Shadow.png" />
+              <PlistImageFile Name="eightBall_BallBag_Bg.png" Key="eightBall_BallBag_Bg.png" />
+              <PlistImageFile Name="eightBall_Bootom_traslateBack.png" Key="eightBall_Bootom_traslateBack.png" />
+              <PlistImageFile Name="eightBall_Btn_Menu.png" Key="eightBall_Btn_Menu.png" />
+              <PlistImageFile Name="eightBall_Cue.png" Key="eightBall_Cue.png" />
+              <PlistImageFile Name="eightBall_DrawCircle.png" Key="eightBall_DrawCircle.png" />
+              <PlistImageFile Name="eightBall_DrawCircle_Red.png" Key="eightBall_DrawCircle_Red.png" />
+              <PlistImageFile Name="eightBall_DrawCircle_Shadow.png" Key="eightBall_DrawCircle_Shadow.png" />
+              <PlistImageFile Name="eightBall_DrawLine.png" Key="eightBall_DrawLine.png" />
+              <PlistImageFile Name="eightBall_Effect_Bg.png" Key="eightBall_Effect_Bg.png" />
+              <PlistImageFile Name="eightBall_FineTurning_Back2.png" Key="eightBall_FineTurning_Back2.png" />
+              <PlistImageFile Name="eightBall_FineTurning_Scale.png" Key="eightBall_FineTurning_Scale.png" />
+              <PlistImageFile Name="eightBall_FineTurning_Tag.png" Key="eightBall_FineTurning_Tag.png" />
+              <PlistImageFile Name="eightBall_FineTurningBg.png" Key="eightBall_FineTurningBg.png" />
+              <PlistImageFile Name="eightBall_ForbidSet_WhiteBall.png" Key="eightBall_ForbidSet_WhiteBall.png" />
+              <PlistImageFile Name="eightBall_HeadFramwork.png" Key="eightBall_HeadFramwork.png" />
+              <PlistImageFile Name="eightBall_HighLowPole_Bg.png" Key="eightBall_HighLowPole_Bg.png" />
+              <PlistImageFile Name="eightBall_HighLowPole_BigWhiteBall.png" Key="eightBall_HighLowPole_BigWhiteBall.png" />
+              <PlistImageFile Name="eightBall_HighLowPole_RedPint.png" Key="eightBall_HighLowPole_RedPint.png" />
+              <PlistImageFile Name="eightBall_Img_VS.png" Key="eightBall_Img_VS.png" />
+              <PlistImageFile Name="eightBall_Needle_Deal.png" Key="eightBall_Needle_Deal.png" />
+              <PlistImageFile Name="eightBall_PowerView.png" Key="eightBall_PowerView.png" />
+              <PlistImageFile Name="eightBall_PowerView_Back.png" Key="eightBall_PowerView_Back.png" />
+              <PlistImageFile Name="eightBall_Sliderbar_Bg.png" Key="eightBall_Sliderbar_Bg.png" />
+              <PlistImageFile Name="eightBall_SliderBar_Cue.png" Key="eightBall_SliderBar_Cue.png" />
+              <PlistImageFile Name="eightBall_SliderBar_Power.png" Key="eightBall_SliderBar_Power.png" />
+              <PlistImageFile Name="eightBall_Small_RedPoint.png" Key="eightBall_Small_RedPoint.png" />
+              <PlistImageFile Name="eightBall_Small_Whiteball.png" Key="eightBall_Small_Whiteball.png" />
+              <PlistImageFile Name="eightBall_TieBar_Dial.png" Key="eightBall_TieBar_Dial.png" />
+              <PlistImageFile Name="eightBall_TimeProgress.png" Key="eightBall_TimeProgress.png" />
+              <PlistImageFile Name="eightBall_Tips.png" Key="eightBall_Tips.png" />
+              <PlistImageFile Name="eightBall_Tips_Bg.png" Key="eightBall_Tips_Bg.png" />
+              <PlistImageFile Name="eightBall_TransparentBall.png" Key="eightBall_TransparentBall.png" />
+              <PlistImageFile Name="eightBall_User2Inf_Bg.png" Key="eightBall_User2Inf_Bg.png" />
+              <PlistImageFile Name="eightBall_UserInf_Bg.png" Key="eightBall_UserInf_Bg.png" />
+              <PlistImageFile Name="eightBall_VS_Dial.png" Key="eightBall_VS_Dial.png" />
+              <PlistImageFile Name="eightBall_WhiteBack.png" Key="eightBall_WhiteBack.png" />
+              <PlistImageFile Name="eightBall_WhiteBall_BigCircle.png" Key="eightBall_WhiteBall_BigCircle.png" />
+              <PlistImageFile Name="eightBall_WhiteBall_Hand.png" Key="eightBall_WhiteBall_Hand.png" />
+              <PlistImageFile Name="eightBall_Word_HitFullBall.png" Key="eightBall_Word_HitFullBall.png" />
+              <PlistImageFile Name="eightBall_Word_HitHalfBall.png" Key="eightBall_Word_HitHalfBall.png" />
+              <PlistImageFile Name="eightBall_Word_YourRound.png" Key="eightBall_Word_YourRound.png" />
+              <PlistImageFile Name="img_Effect_Link.png" Key="img_Effect_Link.png" />
+              <PlistImageFile Name="img_num_0.png" Key="img_num_0.png" />
+              <PlistImageFile Name="img_num_1.png" Key="img_num_1.png" />
+              <PlistImageFile Name="img_num_2.png" Key="img_num_2.png" />
+              <PlistImageFile Name="img_num_3.png" Key="img_num_3.png" />
+              <PlistImageFile Name="img_num_4.png" Key="img_num_4.png" />
+              <PlistImageFile Name="img_num_5.png" Key="img_num_5.png" />
+              <PlistImageFile Name="img_num_6.png" Key="img_num_6.png" />
+              <PlistImageFile Name="img_num_7.png" Key="img_num_7.png" />
+              <PlistImageFile Name="img_num_8.png" Key="img_num_8.png" />
+              <PlistImageFile Name="img_num_9.png" Key="img_num_9.png" />
+            </PlistImageFolder>
+            <PlistInfo Name="BilliardsCommon.csi" Type="Plist" />
+            <PlistInfo Name="BilliardsFrameEffet.csi" Type="Plist" />
+            <PlistInfo Name="EightBall.csi" Type="Plist" />
+          </Folder>
+          <Image Name="jindutiao_01.png" />
+          <Image Name="jindutiao_02.png" />
+        </Folder>
+        <Folder Name="UI">
+          <Folder Name="Billiards">
+            <Project Name="BilliardsCommonLayer.csd" Type="Layer" />
+            <Project Name="BilliardsLoadingLayer.csd" Type="Layer" />
+            <Project Name="billiardsWhiteBallLayer.csd" Type="Layer" />
+            <Project Name="EightBallGameOverLayer.csd" Type="Layer" />
+            <Project Name="EightBallLayer.csd" Type="Layer" />
+            <Project Name="EightBallSettingLayer.csd" Type="Layer" />
+          </Folder>
+        </Folder>
+      </RootFolder>
+    </Group>
+  </SolutionFolder>
+</Solution>

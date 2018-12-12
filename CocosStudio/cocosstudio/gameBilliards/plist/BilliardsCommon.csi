@@ -1,0 +1,6 @@
+<PlistInfoProjectFile>
+  <PropertyGroup Name="BilliardsCommon" Type="Plist" ID="f8c4e430-657f-4d5d-9c9d-ef7e0f4c2882" Version="3.10.0.0" />
+  <Content ExportType="Png" SortAlgorithm="MaxRects" PicturePadding="1" AllowRotation="True" AllowAnySize="True" AllowTrim="True" ctype="PlistInfoData">
+    <MaxSize Width="1200" Height="1200" />
+  </Content>
+</PlistInfoProjectFile>
