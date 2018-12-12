@@ -1,4 +1,4 @@
-# Billiards
+# Billiards with cocos2d-x 3.10 lua
 a Billiards game by cocos2d-x lua
 
 cocos2d-x engine version 3.10
