@@ -1,4 +1,29 @@
-# Billiards cocos cocos2d-x 3.10 lua
+<p align="center"><img src="logo.png"></p>
+<p align="center">
+    <a href="">
+        <img src="https://img.shields.io/badge/OS-android%20iOS%20windows-orange.svg">
+    </a>
+    <a href="https://www.cocos.com/">
+        <img src="https://img.shields.io/badge/engine-cocos2d--x-blue.svg">
+    </a>
+    <a href="https://isocpp.org/">
+        <img src="https://img.shields.io/badge/language-C%2B%2B11-blue.svg">
+    </a>
+  <a href="https://www.lua.org/">
+        <img src="https://img.shields.io/badge/language-lua%205.1-red.svg">
+    </a>
+    <a href="https://travis-ci.org/felixguendling/cista">
+        <img src="https://travis-ci.org/felixguendling/cista.svg?branch=master">
+    </a>
+    <a href="https://coveralls.io/github/felixguendling/cista?branch=master">
+        <img src="https://coveralls.io/repos/github/felixguendling/cista/badge.svg?branch=master">
+    </a>
+    <a href="https://opensource.org/licenses/MIT" >
+        <img src="https://img.shields.io/apm/l/vim-mode.svg">
+    </a>
+</p>
+
+# Billiards cocos2d-x
 a Billiards game by cocos2d-x lua
 
 the rendering:
