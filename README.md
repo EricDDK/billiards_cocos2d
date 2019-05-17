@@ -18,8 +18,8 @@
     <a href="https://coveralls.io/github/felixguendling/cista?branch=master">
         <img src="https://coveralls.io/repos/github/felixguendling/cista/badge.svg?branch=master">
     </a>
-    <a href="https://opensource.org/licenses/MIT" >
-        <img src="https://img.shields.io/apm/l/vim-mode.svg">
+    <a href="https://www.apache.org/licenses/LICENSE-2.0" >
+        <img src="https://img.shields.io/badge/license-Apache-red.svg">
     </a>
 </p>
 
