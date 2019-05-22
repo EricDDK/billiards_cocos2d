@@ -35,12 +35,12 @@ cocos2d-x engine version 3.10
 lua version 5.1
 config on http://www.cocos.com/
 
-## open project way:
+## the way to open project:
 
 new update on 2018-12-11
 the whole project is in the repository.
 open the Billiards/frameworkd/runtime-src/proj.win32/Billiards.sln
-and you can conpile the project.
+and you can compile the project.
 
 新版工程可以直接编译，已经包入了cocos2d-x引擎
 打开Billiards/frameworkd/runtime-src/proj.win32/Billiards.sln可以直接F5运行
